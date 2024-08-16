@@ -43,7 +43,16 @@ func (f *FooRemoteImpl) Beep(ctx context.Context, value int) (string, error) {
 		return "", err
 	}
 
-	result0 := reply[0].(string)
+	var result0 error = get[error](reply[0])
+	var result1 string = get[string](reply[1])
 
-	return result0, nil
+	return result1, result0
+}
+
+func get[T any](a any) T {
+	var zero T
+	if a == nil {
+		return zero
+	}
+	return a.(T)
 }
