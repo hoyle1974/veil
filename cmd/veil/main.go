@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -29,7 +30,9 @@ func GenerateInterfaceWithMethods(file *ast.File, typeSpec *ast.TypeSpec) (strin
 	// Iterate over the methods and generate method signatures.
 	for _, method := range methods {
 		methodSignature := GenerateMethodSignature(method)
-		builder.WriteString(fmt.Sprintf("\t%s\n", methodSignature))
+		if methodSignature != "" {
+			builder.WriteString(fmt.Sprintf("\t%s\n", methodSignature))
+		}
 	}
 
 	builder.WriteString("}\n")
@@ -77,6 +80,10 @@ func GenerateMethodSignature(funcDecl *ast.FuncDecl) string {
 	var builder strings.Builder
 	builder.WriteString(funcDecl.Name.Name)
 
+	if len(funcDecl.Type.Params.List) == 0 {
+		return ""
+	}
+
 	// Handle the function parameters.
 	builder.WriteString("(")
 	for i, param := range funcDecl.Type.Params.List {
@@ -84,7 +91,11 @@ func GenerateMethodSignature(funcDecl *ast.FuncDecl) string {
 			if i > 0 || j > 0 {
 				builder.WriteString(", ")
 			}
-			builder.WriteString(name.Name + " " + getTypeAsString(param.Type))
+			tas := getTypeAsString(param.Type)
+			if i == 0 && tas != "context.Context" {
+				return ""
+			}
+			builder.WriteString(name.Name + " " + tas)
 		}
 	}
 	builder.WriteString(") ")
@@ -92,13 +103,21 @@ func GenerateMethodSignature(funcDecl *ast.FuncDecl) string {
 	// Handle the return values.
 	if funcDecl.Type.Results != nil {
 		builder.WriteString("(")
+		errorTypeFound := false
 		for i, result := range funcDecl.Type.Results.List {
 			if i > 0 {
 				builder.WriteString(", ")
 			}
-			builder.WriteString(getTypeAsString(result.Type))
+			tas := getTypeAsString(result.Type)
+			if tas == "error" {
+				errorTypeFound = true
+			}
+			builder.WriteString(tas)
 		}
 		builder.WriteString(")")
+		if !errorTypeFound {
+			return ""
+		}
 	}
 
 	return builder.String()
@@ -135,6 +154,15 @@ func getTypeAsString(expr ast.Expr) string {
 	}
 }
 
+func getImports(file *ast.File) []string {
+	var importPaths []string
+	for _, imp := range file.Imports {
+		importPath := imp.Path.Value[1 : len(imp.Path.Value)-1]
+		importPaths = append(importPaths, importPath)
+	}
+	return importPaths
+}
+
 // Testing
 func main() {
 	// Replace "your/project/path" with the actual path to your project
@@ -142,6 +170,11 @@ func main() {
 	// fmt.Println(os.Environ())
 	fileName := os.Getenv("GOFILE")
 	pkgName := os.Getenv("GOPACKAGE")
+
+	if fileName == "" {
+		fileName = "/Users/jstrohm/code/veil/cmd/ref/main.go"
+		pkgName = "main"
+	}
 	ifile := "impl_" + fileName
 
 	fset := token.NewFileSet()
@@ -156,6 +189,12 @@ func main() {
 
 	var builder strings.Builder
 	builder.WriteString("package " + pkgName + "\n\n")
+
+	builder.WriteString("import (\n")
+	for _, i := range getImports(file) {
+		builder.WriteString("	\"" + i + "\"\n")
+	}
+	builder.WriteString(")\n\n")
 
 	ast.Inspect(file, func(n ast.Node) bool {
 		// Check for comments first.
@@ -191,5 +230,11 @@ func main() {
 	})
 
 	os.WriteFile(ifile, []byte(builder.String()), 0644)
+
+	cmd := exec.Command("goimports", "-w", ifile)
+	err = cmd.Run()
+	if err != nil {
+		panic(err)
+	}
 
 }

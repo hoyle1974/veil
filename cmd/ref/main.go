@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 //go:generate veil
 
@@ -8,7 +11,11 @@ import "fmt"
 type Foo struct {
 }
 
-func (f *Foo) Beep() error {
+func (f *Foo) Beep(ctx context.Context) error {
+	return nil
+}
+
+func (f *Foo) BeepBad() error {
 	return nil
 }
 
@@ -16,8 +23,12 @@ func (f *Foo) Beep() error {
 type Bar struct {
 }
 
-func (f *Bar) Boop() {
+func (f *Bar) Boop(ctx context.Context) {
 
+}
+
+func (f *Bar) BoopBad(ctx context.Context) string {
+	return ""
 }
 
 func main() {
