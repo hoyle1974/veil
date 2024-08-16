@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+
+	"github.com/hoyle1974/veil/veil"
 )
 
 //go:generate veil

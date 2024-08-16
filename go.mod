@@ -1,4 +1,4 @@
-module github.com/hoyle1974/veil.git
+module github.com/hoyle1974/veil
 
 go 1.22.4
 
