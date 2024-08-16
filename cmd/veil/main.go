@@ -142,8 +142,7 @@ func main() {
 	// fmt.Println(os.Environ())
 	fileName := os.Getenv("GOFILE")
 	pkgName := os.Getenv("GOPACKAGE")
-
-	fmt.Println(os.Args)
+	ifile := "impl_" + fileName
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
@@ -191,6 +190,6 @@ func main() {
 		return true
 	})
 
-	fmt.Println(builder.String())
+	os.WriteFile(ifile, []byte(builder.String()), 0644)
 
 }
