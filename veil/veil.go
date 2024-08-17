@@ -76,3 +76,11 @@ func Lookup[T any]() (T, error) {
 	var t T
 	return t, fmt.Errorf("unknown service")
 }
+
+func NilGet[T any](a any) T {
+	var zero T
+	if a == nil {
+		return zero
+	}
+	return a.(T)
+}

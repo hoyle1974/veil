@@ -27,13 +27,10 @@ func (f *FooRemoteImpl) Beep(ctx context.Context, value int) (string, error) {
 	}
 	defer client.Close()
 
-	args := []any{}
-	args = append(args, value)
-
 	request := veil.Request{
 		Service: "main.Foo",
 		Method:  "Beep",
-		Args:    args,
+		Args:    []any{value},
 	}
 
 	reply := []any{}
@@ -43,16 +40,8 @@ func (f *FooRemoteImpl) Beep(ctx context.Context, value int) (string, error) {
 		return "", err
 	}
 
-	var result0 error = get[error](reply[0])
-	var result1 string = get[string](reply[1])
+	var result0 error = veil.NilGet[error](reply[0])
+	var result1 string = veil.NilGet[string](reply[1])
 
 	return result1, result0
-}
-
-func get[T any](a any) T {
-	var zero T
-	if a == nil {
-		return zero
-	}
-	return a.(T)
 }
