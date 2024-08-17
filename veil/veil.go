@@ -5,7 +5,42 @@ import (
 	"net"
 	"net/rpc"
 	"reflect"
+	"sync/atomic"
 )
+
+var conn atomic.Pointer[rpc.Client]
+
+func newConn() (*rpc.Client, error) {
+	return rpc.Dial("tcp", "localhost:1234")
+}
+
+func getConn() *rpc.Client {
+	if conn.Load() != nil {
+		return conn.Load()
+	}
+
+	db, err := newConn()
+	if err != nil {
+		panic(err)
+	}
+
+	old := conn.Swap(db)
+	if old != nil {
+		old.Close()
+	}
+	return db
+}
+
+type RPCService struct {
+}
+
+func (f *RPCService) Call(request Request, reply *[]any) error {
+	err := getConn().Call("MyService.MyCall", request, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 type Request struct {
 	Service string
