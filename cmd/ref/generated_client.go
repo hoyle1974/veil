@@ -45,3 +45,31 @@ func (f *FooRemoteImpl) Beep(ctx context.Context, value int) (string, error) {
 
 	return result1, result0
 }
+
+// Make a remote call to main.Foo.Beep
+func (f *FooRemoteImpl) Boop(ctx context.Context, value string) (string, error) {
+	// Dial the remote RPC server
+	client, err := rpc.Dial("tcp", "localhost:1234")
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	request := veil.Request{
+		Service: "main.Foo",
+		Method:  "Boop",
+		Args:    []any{value},
+	}
+
+	reply := []any{}
+
+	err = client.Call("MyService.MyCall", request, &reply)
+	if err != nil {
+		return "", err
+	}
+
+	var result0 error = veil.NilGet[error](reply[0])
+	var result1 string = veil.NilGet[string](reply[1])
+
+	return result1, result0
+}

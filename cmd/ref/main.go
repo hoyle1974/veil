@@ -15,8 +15,11 @@ type Foo struct {
 }
 
 func (f *Foo) Beep(ctx context.Context, value int) (string, error) {
-	fmt.Println("-- beep --")
 	return fmt.Sprintf("beep!:%v", value), nil
+}
+
+func (f *Foo) Boop(ctx context.Context, value string) (string, error) {
+	return fmt.Sprintf("boop!:%v", value), nil
 }
 
 func startServer() {
@@ -35,6 +38,12 @@ func startClient() {
 		panic(err)
 	}
 	fmt.Println("Beep Returned", s)
+
+	s, err = foo.Boop(context.Background(), "Hello World")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Boop Returned", s)
 }
 
 func main() {

@@ -16,5 +16,14 @@ func VeilInitServer() {
 			*reply = append(*reply, err)
 			*reply = append(*reply, ret)
 		}
+		if method == "Boop" {
+			ret, err := s.(FooInterface).Boop(
+				context.Background(),
+				args[0].(string),
+			)
+			*reply = append(*reply, err)
+			*reply = append(*reply, ret)
+		}
 	})
+	go veil.StartServices()
 }

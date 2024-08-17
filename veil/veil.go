@@ -14,13 +14,11 @@ type Request struct {
 }
 
 type MyService struct {
-	name    string
-	service any
 }
 
 type RPCCB func(any, string, []any, *[]any)
 
-var services = map[string]*MyService{}
+var services = map[string]any{}
 var cbs = map[string]RPCCB{}
 
 func RegisterService(service string, cb RPCCB) {
@@ -28,17 +26,13 @@ func RegisterService(service string, cb RPCCB) {
 }
 
 func (t *MyService) MyCall(request *Request, reply *[]any) error {
-	cbs[request.Service](t.service, request.Method, request.Args, reply)
+	cbs[request.Service](services[request.Service], request.Method, request.Args, reply)
 	return nil
 }
 
-func Serve(service any) {
-	name := reflect.TypeOf(service).String()[1:]
-	s := &MyService{name: name, service: service}
-	services[name] = s
-
+func StartServices() {
 	// Register the Arithmetic type with the RPC server
-	rpc.Register(s)
+	rpc.Register(&MyService{})
 
 	// Start a TCP listener
 	listener, err := net.Listen("tcp", ":1234")
@@ -56,6 +50,11 @@ func Serve(service any) {
 		}
 		go rpc.ServeConn(conn)
 	}
+}
+
+func Serve(service any) {
+	name := reflect.TypeOf(service).String()[1:]
+	services[name] = service
 }
 
 var l = []any{}
