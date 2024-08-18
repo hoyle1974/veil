@@ -26,8 +26,8 @@ func (f *Foo) Boop(ctx context.Context, value string) (string, error) {
 type Bar struct {
 }
 
-func (f *Bar) DoSomething(ctx context.Context, value int) (string, error) {
-	return fmt.Sprintf("DoSomething!:%v", value), nil
+func (f *Bar) DoSomething(ctx context.Context, value int64, name string, looks []any) (string, error) {
+	return fmt.Sprintf("DoSomething!:%v:%s:%v", value, name, looks), nil
 }
 
 func startServer() {
@@ -38,6 +38,11 @@ func startServer() {
 func startClient() {
 	// This is the client
 	foo, err := veil.Lookup[FooInterface]()
+	if err != nil {
+		panic(err)
+	}
+
+	bar, err := veil.Lookup[BarInterface]()
 	if err != nil {
 		panic(err)
 	}
@@ -53,9 +58,28 @@ func startClient() {
 		panic(err)
 	}
 	fmt.Println("Boop Returned", s)
+
+	s, err = bar.DoSomething(context.Background(), 1, "BarBar", []any{1, 2, 3, 4})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Bar Returned", s)
 }
 
 func main() {
+
+	// data, err := json.Marshal(Bar_DoSomething_Request{5, "Name", []any{1, 2, 3, 4, 5}})
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(data)
+
+	// r := Bar_DoSomething_Request{}
+	// err = json.Unmarshal(data, &r)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(r)
 
 	VeilInitClient()
 	VeilInitServer()

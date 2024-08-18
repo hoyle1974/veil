@@ -50,11 +50,43 @@ func GenerateRemoteImpl(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (st
 	for _, method := range methods {
 		methodSignature := GenerateMethodSignature(method)
 		if methodSignature != "" {
+
+			// Create requests object
+			reqObjName := fmt.Sprintf("%s_%s_Request", typeSpec.Name.Name, method.Name)
+			builder.WriteString("type " + reqObjName + " struct {\n")
+			for i, param := range method.Type.Params.List {
+				for _, name := range param.Names {
+					if i != 0 {
+						tas := getTypeAsString(param.Type)
+						tag := "`bson:\"_" + name.Name + "\"`"
+
+						builder.WriteString("D" + name.Name + " " + tas + " " + tag + "\n")
+					}
+				}
+			}
+			builder.WriteString("}\n")
+
+			temp := ""
+			for i, param := range method.Type.Params.List {
+				for _, name := range param.Names {
+					if i != 0 {
+						if i > 1 {
+							temp += ","
+						}
+						temp += name.Name
+					}
+				}
+			}
+
 			builder.WriteString(fmt.Sprintf("func (r *%s) %s {\n", implName, methodSignature))
+			builder.WriteString("data, err := bson.Marshal(" + reqObjName + "{ " + temp + "})\n")
+			builder.WriteString("if err != nil {\n")
+			builder.WriteString("	panic(err)\n")
+			builder.WriteString("}\n")
 			builder.WriteString("request := veil.Request{\n")
 			builder.WriteString("	Service: \"" + fqdn + "\",\n")
 			builder.WriteString("	Method:  \"" + method.Name.String() + "\",\n")
-			builder.WriteString("	Args:    []any{value},\n")
+			builder.WriteString("	Args:    data,\n")
 			builder.WriteString("}\n")
 			builder.WriteString("reply := []any{}\n")
 
@@ -67,7 +99,7 @@ func GenerateRemoteImpl(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (st
 					last = fmt.Sprintf("result%d", i)
 				}
 			}
-			builder.WriteString("err := veil.Call(request, &reply)\n")
+			builder.WriteString("err = veil.Call(request, &reply)\n")
 
 			builder.WriteString("if err != nil {\n")
 			builder.WriteString("	" + last + " = err\n")

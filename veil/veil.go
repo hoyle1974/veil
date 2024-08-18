@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/rpc"
 	"reflect"
+	"sync"
 	"sync/atomic"
 )
 
@@ -42,14 +43,15 @@ func Call(request Request, reply *[]any) error {
 type Request struct {
 	Service string
 	Method  string
-	Args    []any
+	Args    []byte
 }
 
 type MyService struct {
 }
 
-type RPCCB func(any, string, []any, *[]any)
+type RPCCB func(any, string, any, *[]any)
 
+var slock sync.Mutex
 var services = map[string]any{}
 var cbs = map[string]RPCCB{}
 
@@ -58,6 +60,8 @@ func RegisterService(service string, cb RPCCB) {
 }
 
 func (t *MyService) MyCall(request *Request, reply *[]any) error {
+	slock.Lock()
+	defer slock.Unlock()
 	cbs[request.Service](services[request.Service], request.Method, request.Args, reply)
 	return nil
 }
@@ -85,6 +89,9 @@ func StartServices() {
 }
 
 func Serve(service any) {
+	slock.Lock()
+	defer slock.Unlock()
+
 	name := reflect.TypeOf(service).String()[1:]
 	services[name] = service
 }

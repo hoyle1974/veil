@@ -165,6 +165,7 @@ func getImports(file *ast.File) []string {
 
 // Testing
 func main() {
+
 	// Replace "your/project/path" with the actual path to your project
 	// projectPath :=  "/Users/jstrohm/code/veil/cmd/veil"
 	// fmt.Println(os.Environ())
@@ -222,7 +223,6 @@ func main() {
 				lastComment = ""
 
 				fqdn := pkgName + "." + typeSpec.Name.Name
-				fmt.Println(fqdn)
 
 				s, _ := GenerateInterfaceWithMethods(fqdn, file, typeSpec)
 				builder.WriteString("// Generated from " + fileName + "\n")

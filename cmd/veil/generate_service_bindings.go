@@ -41,22 +41,28 @@ func GenerateServiceBindings(fqdn string, file *ast.File, typeSpec *ast.TypeSpec
 	interfaceName := fmt.Sprintf("%sInterface", typeSpec.Name.Name)
 	var builder strings.Builder
 
-	builder.WriteString("	veil.RegisterService(\"" + fqdn + "\", func(s any, method string, args []any, reply *[]any) {")
+	builder.WriteString("veil.RegisterService(\"" + fqdn + "\", func(s any, method string, arg any, reply *[]any) {")
 
 	methods := GetMethodsForStruct(file, typeSpec.Name.Name)
 
 	for _, method := range methods {
 		methodSignature := GenerateMethodSignature(method)
 		if methodSignature != "" {
+			reqObjName := fmt.Sprintf("%s_%s_Request", typeSpec.Name.Name, method.Name)
 
 			builder.WriteString("if method == \"" + method.Name.Name + "\" {\n")
+			builder.WriteString("r := " + reqObjName + "{}\n")
+			builder.WriteString("err := bson.Unmarshal(arg.([]byte), &r)\n")
+			builder.WriteString("if err != nil {\n")
+			builder.WriteString("	panic(err)\n")
+			builder.WriteString("}\n")
 			builder.WriteString("	ret, err := s.(" + interfaceName + ")." + method.Name.Name + "(\n")
 			builder.WriteString("		context.Background(),\n")
-			// builder.WriteString("		args[0].(int),\n")
 			for i, param := range method.Type.Params.List {
-				tas := getTypeAsString(param.Type)
-				if i != 0 {
-					builder.WriteString("		args[" + fmt.Sprintf("%d", i-1) + "].(" + tas + "),\n")
+				for _, name := range param.Names {
+					if i != 0 {
+						builder.WriteString("		r.D" + name.String() + ",\n")
+					}
 				}
 			}
 			builder.WriteString("	)\n")
