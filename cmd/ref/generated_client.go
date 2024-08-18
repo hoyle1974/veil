@@ -1,21 +1,15 @@
 package main
 
-import (
-	"context"
-
-	"github.com/hoyle1974/veil/veil"
-)
-
 // Registers the remote implementation with veil
 // so when Lookup is called it can be returned
 // It will then make a call to the remote version of the service
-func VeilInitClient() {
-	veil.RegisterRemoteImpl(&FooRemoteImpl{veil.RPCService{}})
-}
+// func VeilInitClient() {
+// 	veil.RegisterRemoteImpl(&FooRemoteImpl{})
+// }
 
+/*
 // ------------- This would be generated code to exist on the client to make a call to the server
 type FooRemoteImpl struct {
-	veil.RPCService
 }
 
 // Make a remote call to main.Foo.Beep
@@ -31,7 +25,7 @@ func (f *FooRemoteImpl) Beep(ctx context.Context, value int) (string, error) {
 	var result0 error
 	var result1 string
 
-	err := f.Call(request, &reply)
+	err := veil.Call(request, &reply)
 	if err != nil {
 		result0 = err
 	} else {
@@ -55,7 +49,7 @@ func (f *FooRemoteImpl) Boop(ctx context.Context, value string) (string, error) 
 	var result0 error
 	var result1 string
 
-	err := f.Call(request, &reply)
+	err := veil.Call(request, &reply)
 	if err != nil {
 		result0 = err
 	} else {
@@ -65,3 +59,4 @@ func (f *FooRemoteImpl) Boop(ctx context.Context, value string) (string, error) 
 
 	return result1, result0
 }
+*/

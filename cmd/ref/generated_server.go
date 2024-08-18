@@ -1,11 +1,6 @@
 package main
 
-import (
-	"context"
-
-	"github.com/hoyle1974/veil/veil"
-)
-
+/*
 func VeilInitServer() {
 	veil.RegisterService("main.Foo", func(s any, method string, args []any, reply *[]any) {
 		if method == "Beep" {
@@ -27,3 +22,4 @@ func VeilInitServer() {
 	})
 	go veil.StartServices()
 }
+*/

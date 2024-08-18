@@ -31,10 +31,7 @@ func getConn() *rpc.Client {
 	return db
 }
 
-type RPCService struct {
-}
-
-func (f *RPCService) Call(request Request, reply *[]any) error {
+func Call(request Request, reply *[]any) error {
 	err := getConn().Call("MyService.MyCall", request, &reply)
 	if err != nil {
 		return err

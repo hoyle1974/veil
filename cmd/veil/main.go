@@ -188,6 +188,7 @@ func main() {
 	var lastComment string
 
 	var builder strings.Builder
+	var cb strings.Builder
 	builder.WriteString("package " + pkgName + "\n\n")
 
 	builder.WriteString("import (\n")
@@ -223,11 +224,26 @@ func main() {
 				builder.WriteString("// Generated from " + fileName + "\n")
 				builder.WriteString(s)
 				builder.WriteString("\n")
+
+				implName := fmt.Sprintf("%sRemoteImpl", typeSpec.Name.Name)
+				cb.WriteString("veil.RegisterRemoteImpl(&" + implName + "{})\n")
+
+				s, _ = GenerateRemoteImpl(file, typeSpec)
+				builder.WriteString(s)
+				builder.WriteString("\n")
+
+				s, _ = GenerateServiceBindings(file, typeSpec)
+				builder.WriteString(s)
+				builder.WriteString("\n")
 			}
 		}
 
 		return true
 	})
+
+	builder.WriteString("func VeilInitClient() {\n")
+	builder.WriteString(cb.String())
+	builder.WriteString("}\n")
 
 	os.WriteFile(ifile, []byte(builder.String()), 0644)
 
