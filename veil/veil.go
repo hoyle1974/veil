@@ -58,7 +58,13 @@ func getConn() *rpc.Client {
 }
 
 func Call(request Request, reply *[]any) error {
-	err := getConn().Call("MyService.MyCall", request, &reply)
+	conn, err := newConn()
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	err = conn.Call("MyService.MyCall", request, &reply)
 	if err != nil {
 		return err
 	}
@@ -85,8 +91,6 @@ func RegisterService(service string, cb RPCCB) {
 }
 
 func (t *MyService) MyCall(request *Request, reply *[]any) error {
-	slock.Lock()
-	defer slock.Unlock()
 	cbs[request.Service](services[request.Service], request.Method, request.Args, reply)
 	return nil
 }
