@@ -9,6 +9,31 @@ import (
 	"sync/atomic"
 )
 
+type Init func()
+
+var clientInits = []Init{}
+var serverInits = []Init{}
+
+func RegisterClientInit(i Init) {
+	clientInits = append(clientInits, i)
+}
+func RegisterServerInit(i Init) {
+	serverInits = append(serverInits, i)
+}
+
+func VeilInitClient() {
+	for _, i := range clientInits {
+		i()
+	}
+}
+
+func VeilInitServer() {
+	for _, i := range serverInits {
+		i()
+	}
+	go StartServices()
+}
+
 var conn atomic.Pointer[rpc.Client]
 
 func newConn() (*rpc.Client, error) {

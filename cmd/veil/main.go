@@ -244,13 +244,13 @@ func main() {
 		return true
 	})
 
-	builder.WriteString("func VeilInitServer() {\n")
+	builder.WriteString("func init() {\n")
+	builder.WriteString("veil.RegisterServerInit(func(){\n")
 	builder.WriteString(s2)
-	builder.WriteString("	go veil.StartServices()\n")
-	builder.WriteString("}\n")
-
-	builder.WriteString("func VeilInitClient() {\n")
+	builder.WriteString("})\n")
+	builder.WriteString("veil.RegisterClientInit(func(){\n")
 	builder.WriteString(cb.String())
+	builder.WriteString("})\n")
 	builder.WriteString("}\n")
 
 	os.WriteFile(ifile, []byte(builder.String()), 0644)

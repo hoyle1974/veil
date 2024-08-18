@@ -8,28 +8,6 @@ import (
 	"github.com/hoyle1974/veil/veil"
 )
 
-//go:generate veil
-
-// @d:service
-type Foo struct {
-}
-
-func (f *Foo) Beep(ctx context.Context, value int) (string, error) {
-	return fmt.Sprintf("beep!:%v", value), nil
-}
-
-func (f *Foo) Boop(ctx context.Context, value string) (string, error) {
-	return fmt.Sprintf("boop!:%v", value), nil
-}
-
-// @d:service
-type Bar struct {
-}
-
-func (f *Bar) DoSomething(ctx context.Context, value int64, name string, looks []any) (string, error) {
-	return fmt.Sprintf("DoSomething!:%v:%s:%v", value, name, looks), nil
-}
-
 func startServer() {
 	go veil.Serve(&Foo{})
 	go veil.Serve(&Bar{})
@@ -67,22 +45,8 @@ func startClient() {
 }
 
 func main() {
-
-	// data, err := json.Marshal(Bar_DoSomething_Request{5, "Name", []any{1, 2, 3, 4, 5}})
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(data)
-
-	// r := Bar_DoSomething_Request{}
-	// err = json.Unmarshal(data, &r)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(r)
-
-	VeilInitClient()
-	VeilInitServer()
+	veil.VeilInitClient()
+	veil.VeilInitServer()
 
 	startServer()
 
