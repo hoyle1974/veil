@@ -11,7 +11,7 @@ import (
 )
 
 // GenerateInterfaceWithMethods generates a Go interface that includes all methods for a given struct type (from ast.TypeSpec).
-func GenerateInterfaceWithMethods(file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
+func GenerateInterfaceWithMethods(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
 	// Ensure the type is a struct.
 	_, ok := typeSpec.Type.(*ast.StructType)
 	if !ok {
@@ -220,7 +220,10 @@ func main() {
 				// Reset the last comment after it is used.
 				lastComment = ""
 
-				s, _ := GenerateInterfaceWithMethods(file, typeSpec)
+				fqdn := pkgName + "." + typeSpec.Name.Name
+				fmt.Println(fqdn)
+
+				s, _ := GenerateInterfaceWithMethods(fqdn, file, typeSpec)
 				builder.WriteString("// Generated from " + fileName + "\n")
 				builder.WriteString(s)
 				builder.WriteString("\n")
@@ -228,11 +231,11 @@ func main() {
 				implName := fmt.Sprintf("%sRemoteImpl", typeSpec.Name.Name)
 				cb.WriteString("veil.RegisterRemoteImpl(&" + implName + "{})\n")
 
-				s, _ = GenerateRemoteImpl(file, typeSpec)
+				s, _ = GenerateRemoteImpl(fqdn, file, typeSpec)
 				builder.WriteString(s)
 				builder.WriteString("\n")
 
-				s, _ = GenerateServiceBindings(file, typeSpec)
+				s, _ = GenerateServiceBindings(fqdn, file, typeSpec)
 				builder.WriteString(s)
 				builder.WriteString("\n")
 			}

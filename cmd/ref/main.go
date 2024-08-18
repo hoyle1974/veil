@@ -28,7 +28,7 @@ func startServer() {
 
 func startClient() {
 	// This is the client
-	foo, err := veil.Lookup[FooInterface]()
+	foo, err := veil.Lookup[FoobyInterface]()
 	if err != nil {
 		panic(err)
 	}

@@ -30,7 +30,7 @@ func VeilInitServer() {
 }
 */
 
-func GenerateServiceBindings(file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
+func GenerateServiceBindings(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
 	// Ensure the type is a struct.
 	_, ok := typeSpec.Type.(*ast.StructType)
 	if !ok {
@@ -42,7 +42,7 @@ func GenerateServiceBindings(file *ast.File, typeSpec *ast.TypeSpec) (string, er
 	var builder strings.Builder
 
 	builder.WriteString("func VeilInitServer() {\n")
-	builder.WriteString("	veil.RegisterService(\"main.Foo\", func(s any, method string, args []any, reply *[]any) {")
+	builder.WriteString("	veil.RegisterService(\"" + fqdn + "\", func(s any, method string, args []any, reply *[]any) {")
 
 	methods := GetMethodsForStruct(file, typeSpec.Name.Name)
 

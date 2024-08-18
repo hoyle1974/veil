@@ -30,7 +30,7 @@ import (
 
 */
 
-func GenerateRemoteImpl(file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
+func GenerateRemoteImpl(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
 	// Ensure the type is a struct.
 	_, ok := typeSpec.Type.(*ast.StructType)
 	if !ok {
@@ -52,7 +52,7 @@ func GenerateRemoteImpl(file *ast.File, typeSpec *ast.TypeSpec) (string, error) 
 		if methodSignature != "" {
 			builder.WriteString(fmt.Sprintf("func (r *%s) %s {\n", implName, methodSignature))
 			builder.WriteString("request := veil.Request{\n")
-			builder.WriteString("	Service: \"main.Foo\",\n")
+			builder.WriteString("	Service: \"" + fqdn + "\",\n")
 			builder.WriteString("	Method:  \"" + method.Name.String() + "\",\n")
 			builder.WriteString("	Args:    []any{value},\n")
 			builder.WriteString("}\n")
