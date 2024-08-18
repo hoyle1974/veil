@@ -22,13 +22,22 @@ func (f *Foo) Boop(ctx context.Context, value string) (string, error) {
 	return fmt.Sprintf("boop!:%v", value), nil
 }
 
+// @d:service
+type Bar struct {
+}
+
+func (f *Bar) DoSomething(ctx context.Context, value int) (string, error) {
+	return fmt.Sprintf("DoSomething!:%v", value), nil
+}
+
 func startServer() {
 	go veil.Serve(&Foo{})
+	go veil.Serve(&Bar{})
 }
 
 func startClient() {
 	// This is the client
-	foo, err := veil.Lookup[FoobyInterface]()
+	foo, err := veil.Lookup[FooInterface]()
 	if err != nil {
 		panic(err)
 	}

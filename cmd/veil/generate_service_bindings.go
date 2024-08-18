@@ -41,7 +41,6 @@ func GenerateServiceBindings(fqdn string, file *ast.File, typeSpec *ast.TypeSpec
 	interfaceName := fmt.Sprintf("%sInterface", typeSpec.Name.Name)
 	var builder strings.Builder
 
-	builder.WriteString("func VeilInitServer() {\n")
 	builder.WriteString("	veil.RegisterService(\"" + fqdn + "\", func(s any, method string, args []any, reply *[]any) {")
 
 	methods := GetMethodsForStruct(file, typeSpec.Name.Name)
@@ -68,8 +67,6 @@ func GenerateServiceBindings(fqdn string, file *ast.File, typeSpec *ast.TypeSpec
 	}
 
 	builder.WriteString("	})\n")
-	builder.WriteString("	go veil.StartServices()\n")
-	builder.WriteString("}\n")
 
 	return builder.String(), nil
 }

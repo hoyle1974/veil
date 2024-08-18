@@ -189,6 +189,7 @@ func main() {
 
 	var builder strings.Builder
 	var cb strings.Builder
+	var s2 string
 	builder.WriteString("package " + pkgName + "\n\n")
 
 	builder.WriteString("import (\n")
@@ -236,13 +237,17 @@ func main() {
 				builder.WriteString("\n")
 
 				s, _ = GenerateServiceBindings(fqdn, file, typeSpec)
-				builder.WriteString(s)
-				builder.WriteString("\n")
+				s2 = s2 + s + "\n"
 			}
 		}
 
 		return true
 	})
+
+	builder.WriteString("func VeilInitServer() {\n")
+	builder.WriteString(s2)
+	builder.WriteString("	go veil.StartServices()\n")
+	builder.WriteString("}\n")
 
 	builder.WriteString("func VeilInitClient() {\n")
 	builder.WriteString(cb.String())
