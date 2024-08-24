@@ -117,23 +117,27 @@ func StartServices() {
 	}
 }
 
-func Serve(service any) {
+type InstanceId string
+
+func Serve(service any) InstanceId {
 	slock.Lock()
 	defer slock.Unlock()
 
 	name := reflect.TypeOf(service).String()[1:]
 	services[name] = service
+
+	return InstanceId("")
 }
 
-var l = []any{}
+var remoteImpl = []any{}
 
 func RegisterRemoteImpl(service any) {
-	l = append(l, service)
+	remoteImpl = append(remoteImpl, service)
 }
 
 func Lookup[T any]() (T, error) {
 	interfaceType := reflect.TypeOf((*T)(nil)).Elem()
-	for _, item := range l {
+	for _, item := range remoteImpl {
 		itemType := reflect.TypeOf(item)
 		if itemType.AssignableTo(interfaceType) || itemType.Implements(interfaceType) {
 			return item.(T), nil

@@ -3,8 +3,20 @@ package main
 import (
 	"fmt"
 	"go/ast"
-	"strings"
 )
+
+func (s *Source) GenerateRemoteImpl() error {
+	data, err := GenerateRemoteImpl(s.FQDN(), s.RemoteName(), s.astFile, s.spec)
+	if err != nil {
+		return err
+	}
+
+	var b = &s.file.common
+	b.Sprintf("// Generated from %s\n", s.fileName)
+	b.WriteString(data)
+	b.WriteString("\n")
+	return nil
+}
 
 /*
 
@@ -30,41 +42,41 @@ import (
 
 */
 
-func GenerateRemoteImpl(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
-	// Ensure the type is a struct.
-	_, ok := typeSpec.Type.(*ast.StructType)
-	if !ok {
-		return "", fmt.Errorf("%s is not a struct", typeSpec.Name.Name)
+func generateRequestObject(typeSpec *ast.TypeSpec, method *ast.FuncDecl) (string, string) {
+	var b Builder
+
+	// Create requests object
+	reqObjName := fmt.Sprintf("%s_%s_Request", typeSpec.Name.Name, method.Name)
+	b.Sprintf("type %s struct {\n", reqObjName)
+	for i, param := range method.Type.Params.List {
+		for _, name := range param.Names {
+			if i != 0 {
+				tas := getTypeAsString(param.Type)
+				tag := "`bson:\"" + name.Name + "\"`"
+
+				b.Sprintf("%s %s %s\n", UppercaseFirst(name.Name), tas, tag)
+			}
+		}
 	}
+	b.WriteString("}\n")
 
+	return b.String(), reqObjName
+}
+
+func GenerateRemoteImpl(fqdn string, remoteImplName string, file *ast.File, typeSpec *ast.TypeSpec) (string, error) {
 	// Generate interface name based on the struct name.
-	implName := fmt.Sprintf("%sRemoteImpl", typeSpec.Name.Name)
-	var builder strings.Builder
 
-	builder.WriteString(fmt.Sprintf("type %s struct {}\n", implName))
+	var b Builder
 
-	// Retrieve all methods associated with the struct.
-	methods := GetMethodsForStruct(file, typeSpec.Name.Name)
+	b.Sprintf("type %s struct {}\n", remoteImplName)
 
 	// Iterate over the methods and generate method signatures.
-	for _, method := range methods {
+	for _, method := range GetMethodsForStruct(file, typeSpec.Name.Name) {
 		methodSignature := GenerateMethodSignature(method)
 		if methodSignature != "" {
 
-			// Create requests object
-			reqObjName := fmt.Sprintf("%s_%s_Request", typeSpec.Name.Name, method.Name)
-			builder.WriteString("type " + reqObjName + " struct {\n")
-			for i, param := range method.Type.Params.List {
-				for _, name := range param.Names {
-					if i != 0 {
-						tas := getTypeAsString(param.Type)
-						tag := "`bson:\"_" + name.Name + "\"`"
-
-						builder.WriteString("D" + name.Name + " " + tas + " " + tag + "\n")
-					}
-				}
-			}
-			builder.WriteString("}\n")
+			requestDecl, requestObjName := generateRequestObject(typeSpec, method)
+			b.WriteString(requestDecl)
 
 			temp := ""
 			for i, param := range method.Type.Params.List {
@@ -78,55 +90,56 @@ func GenerateRemoteImpl(fqdn string, file *ast.File, typeSpec *ast.TypeSpec) (st
 				}
 			}
 
-			builder.WriteString(fmt.Sprintf("func (r *%s) %s {\n", implName, methodSignature))
-			builder.WriteString("data, err := bson.Marshal(" + reqObjName + "{ " + temp + "})\n")
-			builder.WriteString("if err != nil {\n")
-			builder.WriteString("	panic(err)\n")
-			builder.WriteString("}\n")
-			builder.WriteString("request := veil.Request{\n")
-			builder.WriteString("	Service: \"" + fqdn + "\",\n")
-			builder.WriteString("	Method:  \"" + method.Name.String() + "\",\n")
-			builder.WriteString("	Args:    data,\n")
-			builder.WriteString("}\n")
-			builder.WriteString("reply := []any{}\n")
+			b.Sprintf("func (r *%s) %s {\n", remoteImplName, methodSignature)
+			b.Sprintf("data, err := bson.Marshal(%s{ %s})\n", requestObjName, temp)
+			b.Sprintf("if err != nil {\n")
+			b.Sprintf("	panic(err)\n")
+			b.Sprintf("}\n")
+			b.Sprintf("request := veil.Request{\n")
+			b.Sprintf("	Service: \"%s\",\n", fqdn)
+			b.Sprintf("	Method:  \"%s\",\n", method.Name.String())
+			b.Sprintf("	Args:    data,\n")
+			b.Sprintf("}\n")
+			b.Sprintf("reply := []any{}\n")
 
 			// Handle the return values.
 			last := ""
 			if method.Type.Results != nil {
 				for i, result := range method.Type.Results.List {
 					tas := getTypeAsString(result.Type)
-					builder.WriteString(fmt.Sprintf("var result%d %s\n", i, tas))
+					b.Sprintf("var result%d %s\n", i, tas)
 					last = fmt.Sprintf("result%d", i)
 				}
 			}
-			builder.WriteString("err = veil.Call(request, &reply)\n")
+			b.Sprintf("err = veil.Call(request, &reply)\n")
 
-			builder.WriteString("if err != nil {\n")
-			builder.WriteString("	" + last + " = err\n")
-			builder.WriteString("} else {\n")
+			b.Sprintf("if err != nil {\n")
+			b.Sprintf("	%s = err\n", last)
+			b.Sprintf("} else {\n")
 			if method.Type.Results != nil {
 				for i, result := range method.Type.Results.List {
 					tas := getTypeAsString(result.Type)
-					builder.WriteString(fmt.Sprintf("result%d = veil.NilGet[%s](reply[%d])\n", i, tas, i))
+					b.Sprintf("result%d = veil.NilGet[%s](reply[%d])\n", i, tas, i)
 				}
 			}
-			builder.WriteString("}\n")
+			b.Sprintf("}\n")
 
-			builder.WriteString("return ")
+			b.Sprintf("return ")
 			if method.Type.Results != nil {
 				for i := range method.Type.Results.List {
 					if i == 0 {
-						builder.WriteString(fmt.Sprintf("result%d", i))
+						b.Sprintf("result%d", i)
 					} else {
-						builder.WriteString(fmt.Sprintf(", result%d", i))
+						b.Sprintf(", result%d", i)
 
 					}
 				}
 			}
+			b.Sprintf("\n")
 
-			builder.WriteString("}\n")
+			b.Sprintf("}\n")
 		}
 	}
 
-	return builder.String(), nil
+	return b.String(), nil
 }

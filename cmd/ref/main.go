@@ -8,50 +8,68 @@ import (
 	"github.com/hoyle1974/veil/veil"
 )
 
-func startServer() {
-	go veil.Serve(&Foo{})
-	go veil.Serve(&Bar{})
+func server() {
+	fmt.Println("server.")
+
+	veil.VeilInitServer()
+
+	// Make these visible remotely
+	veil.Serve(&RoomService{})
+	veil.Serve(&UserService{})
+
 }
 
-func startClient() {
-	// This is the client
-	foo, err := veil.Lookup[FooInterface]()
+func client() {
+	veil.VeilInitClient()
+
+	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+
+	// Lookup the remote interface for the user service
+	// then create 2 users
+	users, err := veil.Lookup[UserServiceInterface]()
+	if err != nil {
+		panic(err)
+	}
+	userId1, err := users.NewUser(ctx, "Joe")
+	if err != nil {
+		panic(err)
+	}
+	userId2, err := users.NewUser(ctx, "Bob")
 	if err != nil {
 		panic(err)
 	}
 
-	// bar, err := veil.Lookup[BarInterface]()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// s, err := foo.Beep(context.Background(), 5)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("Beep Returned", s)
-
-	s, err := foo.Boop(context.Background(), "Hello World")
+	// Lookup the remote interface for the room service
+	// Add the users
+	// Then broadcast a message to all users
+	roomId := "General Lobby"
+	rooms, err := veil.Lookup[RoomServiceInterface]()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Boop Returned", s)
-
-	// s, err = bar.DoSomething(context.Background(), 1, "BarBar", []any{1, 2, 3, 4})
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("Bar Returned", s)
+	if _, err = rooms.AddUser(ctx, roomId, userId1); err != nil {
+		panic(err)
+	}
+	if _, err = rooms.AddUser(ctx, roomId, userId2); err != nil {
+		panic(err)
+	}
+	if _, err = rooms.Broadcast(ctx, roomId, "Hello Everyone!"); err != nil {
+		panic(err)
+	}
 }
 
 func main() {
-	veil.VeilInitClient()
-	veil.VeilInitServer()
-
-	startServer()
-
-	time.Sleep(time.Second)
-
-	startClient()
 
 }
+
+// func main() {
+// 	if os.Args[1] == "server" {
+// 		server()
+// 	}
+// 	if os.Args[1] == "client" {
+// 		client()
+// 	}
+
+// 	fmt.Println("Waiting.")
+// 	select {}
+// }

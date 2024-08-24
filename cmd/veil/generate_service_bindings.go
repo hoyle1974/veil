@@ -6,6 +6,20 @@ import (
 	"strings"
 )
 
+func (s *Source) GenerateServiceBindings() error {
+	data, err := GenerateServiceBindings(s.FQDN(), s.astFile, s.spec)
+	if err != nil {
+		return err
+	}
+
+	var b = &s.file.serverInit
+	b.Sprintf("// Generated from %s\n", s.fileName)
+	b.WriteString(data)
+	b.WriteString("\n")
+
+	return nil
+}
+
 /*
 func VeilInitServer() {
 	veil.RegisterService("main.Foo", func(s any, method string, args []any, reply *[]any) {
@@ -61,7 +75,7 @@ func GenerateServiceBindings(fqdn string, file *ast.File, typeSpec *ast.TypeSpec
 			for i, param := range method.Type.Params.List {
 				for _, name := range param.Names {
 					if i != 0 {
-						builder.WriteString("		r.D" + name.String() + ",\n")
+						builder.WriteString("		r." + UppercaseFirst(name.String()) + ",\n")
 					}
 				}
 			}
