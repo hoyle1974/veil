@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/hoyle1974/veil/veil"
@@ -47,10 +48,10 @@ func client() {
 	if err != nil {
 		panic(err)
 	}
-	if _, err = rooms.AddUser(ctx, roomId, userId1); err != nil {
+	if _, _, err = rooms.AddUser(ctx, roomId, userId1); err != nil {
 		panic(err)
 	}
-	if _, err = rooms.AddUser(ctx, roomId, userId2); err != nil {
+	if _, _, err = rooms.AddUser(ctx, roomId, userId2); err != nil {
 		panic(err)
 	}
 	if _, err = rooms.Broadcast(ctx, roomId, "Hello Everyone!"); err != nil {
@@ -58,18 +59,18 @@ func client() {
 	}
 }
 
-func main() {
-
-}
-
 // func main() {
-// 	if os.Args[1] == "server" {
-// 		server()
-// 	}
-// 	if os.Args[1] == "client" {
-// 		client()
-// 	}
 
-// 	fmt.Println("Waiting.")
-// 	select {}
 // }
+
+func main() {
+	if os.Args[1] == "server" {
+		server()
+	}
+	if os.Args[1] == "client" {
+		client()
+	}
+
+	fmt.Println("Waiting.")
+	select {}
+}

@@ -18,7 +18,9 @@ type {{.InterfaceName}} interface {
 }
 
 // This is a remote implementation client that will send RPC commands to a remote '{{.Name}}'
-type {{.RemoteImplName}} struct {}
+type {{.RemoteImplName}} struct {
+    conn *rpc.Client
+}
 {{ $save := . }}
 {{range .Methods}}
 // Request Object
@@ -31,7 +33,7 @@ func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},
 	if err != nil {
 		panic(err)
 	}
-    request := veil.Request{
+    request := veil.Request{ 
 		Service: "{{$.PackageName}}.{{$struct.Name}}",
 		Method:  "{{.Name}}",
 		Args:    data,
@@ -39,8 +41,7 @@ func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},
     reply := []any{}
 {{range $index, $element := .Returns}}      var result{{$index}} {{$element}}
 {{end}}
-    err = veil.Call(request, &reply)
-
+    err = r.conn.Call("VeilRPC.Call", request, &reply)
     if err != nil {
         result{{ lastItemIndex .Returns }} = err
 	} else { {{range $index, $element := .Returns}} 
@@ -60,7 +61,6 @@ func init() {
 	veil.RegisterServerInit(func() {
 {{range .Structs}}
 {{ $struct := . }}
-    		veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{})
             veil.RegisterService("{{$.PackageName}}.{{$struct.Name}}", func(s any, method string, arg any, reply *[]any) {
 {{ $save := . }}
 {{range .Methods}}
@@ -83,6 +83,9 @@ if method == "{{.Name}}" {
 
     
 	veil.RegisterClientInit(func() {
+    {{range .Structs}}
+        veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{veil.GetConn()})
+    {{end}}
     })
 }
 

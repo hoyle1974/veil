@@ -10,9 +10,9 @@ import (
 type RoomService struct {
 }
 
-func (r *RoomService) AddUser(ctx context.Context, roomId string, userId string) (bool, error) {
+func (r *RoomService) AddUser(ctx context.Context, roomId string, userId string) (int, bool, error) {
 	fmt.Println("AddUser")
-	return true, nil
+	return 0, true, nil
 }
 
 func (r *RoomService) RemoveUser(ctx context.Context, roomId string, userId string) (bool, error) {

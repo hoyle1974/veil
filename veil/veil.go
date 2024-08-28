@@ -40,7 +40,7 @@ func newConn() (*rpc.Client, error) {
 	return rpc.Dial("tcp", "localhost:1234")
 }
 
-func getConn() *rpc.Client {
+func GetConn() *rpc.Client {
 	if conn.Load() != nil {
 		return conn.Load()
 	}
@@ -57,19 +57,19 @@ func getConn() *rpc.Client {
 	return db
 }
 
-func Call(request Request, reply *[]any) error {
-	conn, err := newConn()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+// func Call(request Request, reply *[]any) error {
+// 	conn, err := newConn()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer conn.Close()
 
-	err = conn.Call("MyService.MyCall", request, &reply)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// 	err = conn.Call("MyService.MyCall", request, &reply)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 type Request struct {
 	Service string
@@ -77,7 +77,7 @@ type Request struct {
 	Args    []byte
 }
 
-type MyService struct {
+type VeilRPC struct {
 }
 
 type RPCCB func(any, string, any, *[]any)
@@ -90,14 +90,14 @@ func RegisterService(service string, cb RPCCB) {
 	cbs[service] = cb
 }
 
-func (t *MyService) MyCall(request *Request, reply *[]any) error {
+func (t *VeilRPC) Call(request *Request, reply *[]any) error {
 	cbs[request.Service](services[request.Service], request.Method, request.Args, reply)
 	return nil
 }
 
 func StartServices() {
 	// Register the Arithmetic type with the RPC server
-	rpc.Register(&MyService{})
+	rpc.Register(&VeilRPC{})
 
 	// Start a TCP listener
 	listener, err := net.Listen("tcp", ":1234")
