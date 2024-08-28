@@ -31,11 +31,36 @@ func title(in string) string {
 	return cases.Title(language.English).String(in)
 }
 func lastItemIndex(a any) int {
-	items := a.([]any)
+	items := a.([]string)
 	return len(items) - 1
 }
 
-// Testing
+type Arg struct {
+	Name string
+	Type string
+}
+
+type Method struct {
+	Name    string
+	Args    []Arg
+	Returns []string
+}
+
+type Struct struct {
+	Name           string
+	InterfaceName  string
+	RemoteImplName string
+	Methods        []Method
+}
+
+type Data struct {
+	Filename    string
+	PackageName string
+	Structs     []Struct
+	Packages    []string
+	Name        string
+}
+
 func main() {
 
 	tmpl := template.New("rpc_service.tmpl")
@@ -50,7 +75,7 @@ func main() {
 		panic(err)
 	}
 
-	data := map[any]any{}
+	data := Data{}
 
 	// Replace "your/project/path" with the actual path to your project
 	// projectPath :=  "/Users/jstrohm/code/veil/cmd/veil"
@@ -64,9 +89,9 @@ func main() {
 	}
 	ifile := "impl_" + fileName
 
-	data["Filename"] = fileName
-	data["PackageName"] = pkgName
-	data["Structs"] = []any{}
+	data.Filename = fileName
+	data.PackageName = pkgName
+	data.Structs = []Struct{}
 
 	fset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
@@ -102,13 +127,12 @@ func main() {
 				lastComment = ""
 
 				// Generate method data structure
-				methods := []map[any]any{}
+				methods := []Method{}
 				for _, method := range GetMethodsForStruct(astFile, typeSpec.Name.Name) {
-					mdata := map[any]any{}
-					mdata["Name"] = method.Name.Name
-					methods = append(methods, mdata)
+					mdata := Method{}
+					mdata.Name = method.Name.Name
 
-					args := []map[any]any{}
+					args := []Arg{}
 
 					for i, param := range method.Type.Params.List {
 						for _, name := range param.Names {
@@ -119,17 +143,16 @@ func main() {
 								}
 								continue
 							}
-							args = append(args, map[any]any{
-								"Name": name.Name,
-								"Type": tas,
+							args = append(args, Arg{
+								Name: name.Name,
+								Type: tas,
 							})
 
 						}
 					}
 				skip:
-					mdata["Args"] = args
+					mdata.Args = args
 
-					returns := []any{}
 					if method.Type.Results != nil {
 						errorTypeFound := false
 						for _, result := range method.Type.Results.List {
@@ -137,26 +160,23 @@ func main() {
 							if tas == "error" {
 								errorTypeFound = true
 							}
-							returns = append(returns, tas)
+							mdata.Returns = append(mdata.Returns, tas)
 						}
 						if !errorTypeFound {
-							returns = []any{}
+							mdata.Returns = []string{}
 							goto skip2
 						}
 					}
 				skip2:
-					mdata["Returns"] = returns
-
+					methods = append(methods, mdata)
 				}
 
-				sdata := map[any]any{
-					"Name":           typeSpec.Name.Name,
-					"InterfaceName":  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
-					"RemoteImplName": fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
-					"Methods":        methods,
-				}
-
-				data["Structs"] = append(data["Structs"].([]any), sdata)
+				data.Structs = append(data.Structs, Struct{
+					Name:           typeSpec.Name.Name,
+					InterfaceName:  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
+					RemoteImplName: fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
+					Methods:        methods,
+				})
 
 			}
 		}

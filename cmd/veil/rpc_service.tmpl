@@ -50,7 +50,7 @@ func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},
 }
 {{end}}
 
-{{end}}// End - Interface for {{.Name}}
+{{end}}
 
 
 
@@ -71,19 +71,15 @@ if method == "{{.Name}}" {
 			panic(err)
 		}
         {{range $idx, $element := .Returns}} {{if $idx}},{{end}} ret{{$idx}} {{end}} := s.({{$struct.InterfaceName}}).{{.Name}}(
-			context.Background(),
-            {{range .Args}}
+			context.Background(),{{range .Args}}
             r.{{title .Name}},{{end}}
-		)
-        {{range $idx, $element :=  .Returns }}
-        *reply = append(*reply, ret{{$idx}})
-        {{end}}
-
+		){{range $idx, $element :=  .Returns }}
+        *reply = append(*reply, ret{{$idx}}){{end}}
 }
 {{end}}
-		}) // A
+		}) 
 {{end}}
-    }) // B
+    }) 
 
     
 	veil.RegisterClientInit(func() {
