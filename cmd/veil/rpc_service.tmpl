@@ -1,0 +1,93 @@
+package {{.PackageName}}
+
+
+import (
+    "context"
+    "github.com/hoyle1974/veil/veil"
+	"go.mongodb.org/mongo-driver/bson"
+{{range .Packages}}     "{{.}}"
+{{end}}
+)
+
+{{range .Structs}}
+{{ $struct := . }}
+// This is an interface that defines the publically exposed methods for the struct '{{.Name}}'
+type {{.InterfaceName}} interface {
+{{range .Methods}}
+    {{.Name}}(ctx context.Context{{range .Args}}, {{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}){{end}}
+}
+
+// This is a remote implementation client that will send RPC commands to a remote '{{.Name}}'
+type {{.RemoteImplName}} struct {}
+{{ $save := . }}
+{{range .Methods}}
+// Request Object
+type {{$save.RemoteImplName}}_{{.Name}}_Request struct { {{range .Args}}
+    {{title .Name}} {{.Type}}{{end}}
+}
+// Method
+func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
+    data, err := bson.Marshal({{$save.RemoteImplName}}_{{.Name}}_Request{ {{range $index, $element := .Args}}{{if $index}},{{end}}{{$element.Name}}{{end}} })
+	if err != nil {
+		panic(err)
+	}
+    request := veil.Request{
+		Service: "{{$.PackageName}}.{{$struct.Name}}",
+		Method:  "{{.Name}}",
+		Args:    data,
+	}
+    reply := []any{}
+{{range $index, $element := .Returns}}      var result{{$index}} {{$element}}
+{{end}}
+    err = veil.Call(request, &reply)
+
+    if err != nil {
+        result{{ lastItemIndex .Returns }} = err
+	} else { {{range $index, $element := .Returns}} 
+        result{{$index}} = veil.NilGet[{{$element}}](reply[{{$index}}]){{end}}
+	}
+    return {{range $index, $element := .Returns}}{{if $index}},{{end}}result{{$index}} {{end}}
+}
+{{end}}
+
+{{end}}// End - Interface for {{.Name}}
+
+
+
+
+func init() {
+
+	veil.RegisterServerInit(func() {
+{{range .Structs}}
+{{ $struct := . }}
+    		veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{})
+            veil.RegisterService("{{$.PackageName}}.{{$struct.Name}}", func(s any, method string, arg any, reply *[]any) {
+{{ $save := . }}
+{{range .Methods}}
+if method == "{{.Name}}" {
+        r := {{$save.RemoteImplName}}_{{.Name}}_Request{}
+        err := bson.Unmarshal(arg.([]byte), &r)
+        if err != nil {
+			panic(err)
+		}
+        {{range $idx, $element := .Returns}} {{if $idx}},{{end}} ret{{$idx}} {{end}} := s.({{$struct.InterfaceName}}).{{.Name}}(
+			context.Background(),
+            {{range .Args}}
+            r.{{title .Name}},{{end}}
+		)
+        {{range $idx, $element :=  .Returns }}
+        *reply = append(*reply, ret{{$idx}})
+        {{end}}
+
+}
+{{end}}
+		}) // A
+{{end}}
+    }) // B
+
+    
+	veil.RegisterClientInit(func() {
+    })
+}
+
+

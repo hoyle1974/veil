@@ -26,7 +26,7 @@ func client() {
 
 	// Lookup the remote interface for the user service
 	// then create 2 users
-	users, err := veil.Lookup[UserServiceInterface]()
+	users, err := veil.Lookup[UserService_Interface]()
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +43,7 @@ func client() {
 	// Add the users
 	// Then broadcast a message to all users
 	roomId := "General Lobby"
-	rooms, err := veil.Lookup[RoomServiceInterface]()
+	rooms, err := veil.Lookup[RoomService_Interface]()
 	if err != nil {
 		panic(err)
 	}

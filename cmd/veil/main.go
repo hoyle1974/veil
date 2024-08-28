@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -8,7 +9,14 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
+
+//go:embed rpc_service.tmpl
+var rpc_service []byte
 
 func getImports(file *ast.File) []string {
 	var importPaths []string
@@ -19,8 +27,30 @@ func getImports(file *ast.File) []string {
 	return importPaths
 }
 
+func title(in string) string {
+	return cases.Title(language.English).String(in)
+}
+func lastItemIndex(a any) int {
+	items := a.([]any)
+	return len(items) - 1
+}
+
 // Testing
 func main() {
+
+	tmpl := template.New("rpc_service.tmpl")
+	tmpl.Funcs(map[string]any{
+		"title":         title,
+		"lastItemIndex": lastItemIndex,
+	})
+
+	// Load templates
+	tmpl, err := tmpl.Parse(string(rpc_service))
+	if err != nil {
+		panic(err)
+	}
+
+	data := map[any]any{}
 
 	// Replace "your/project/path" with the actual path to your project
 	// projectPath :=  "/Users/jstrohm/code/veil/cmd/veil"
@@ -29,10 +59,14 @@ func main() {
 	pkgName := os.Getenv("GOPACKAGE")
 
 	if fileName == "" {
-		fileName = "/Users/jstrohm/code/veil/cmd/ref/main.go"
+		fileName = "/Users/jstrohm/code/veil/cmd/ref/user_service.go"
 		pkgName = "main"
 	}
 	ifile := "impl_" + fileName
+
+	data["Filename"] = fileName
+	data["PackageName"] = pkgName
+	data["Structs"] = []any{}
 
 	fset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
@@ -43,8 +77,6 @@ func main() {
 
 	// Store the comments in the file.
 	var lastComment string
-
-	file := NewFile(pkgName)
 
 	ast.Inspect(astFile, func(n ast.Node) bool {
 		// Check for comments first.
@@ -69,19 +101,79 @@ func main() {
 				// Reset the last comment after it is used.
 				lastComment = ""
 
-				source, err := NewSource(pkgName, typeSpec, astFile, fileName, file)
-				if err != nil {
-					panic(err)
+				// Generate method data structure
+				methods := []map[any]any{}
+				for _, method := range GetMethodsForStruct(astFile, typeSpec.Name.Name) {
+					mdata := map[any]any{}
+					mdata["Name"] = method.Name.Name
+					methods = append(methods, mdata)
+
+					args := []map[any]any{}
+
+					for i, param := range method.Type.Params.List {
+						for _, name := range param.Names {
+							tas := getTypeAsString(param.Type)
+							if i == 0 {
+								if tas != "context.Context" {
+									goto skip
+								}
+								continue
+							}
+							args = append(args, map[any]any{
+								"Name": name.Name,
+								"Type": tas,
+							})
+
+						}
+					}
+				skip:
+					mdata["Args"] = args
+
+					returns := []any{}
+					if method.Type.Results != nil {
+						errorTypeFound := false
+						for _, result := range method.Type.Results.List {
+							tas := getTypeAsString(result.Type)
+							if tas == "error" {
+								errorTypeFound = true
+							}
+							returns = append(returns, tas)
+						}
+						if !errorTypeFound {
+							returns = []any{}
+							goto skip2
+						}
+					}
+				skip2:
+					mdata["Returns"] = returns
+
 				}
 
-				source.Generate()
+				sdata := map[any]any{
+					"Name":           typeSpec.Name.Name,
+					"InterfaceName":  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
+					"RemoteImplName": fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
+					"Methods":        methods,
+				}
+
+				data["Structs"] = append(data["Structs"].([]any), sdata)
+
 			}
 		}
 
 		return true
 	})
 
-	os.WriteFile(ifile, []byte(file.String()), 0644)
+	f, err := os.OpenFile(ifile, os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, data)
+	if err != nil {
+		panic(err)
+	}
 
 	cmd := exec.Command("goimports", "-w", ifile)
 	err = cmd.Run()
