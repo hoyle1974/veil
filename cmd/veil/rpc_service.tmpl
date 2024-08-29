@@ -88,9 +88,9 @@ func init() {
     }) // RegisterServerInit
 
     
-	veil.RegisterClientInit(func() {
+	veil.RegisterClientInit(func(factory veil.ConnectionFactory) {
 {{range .Structs}}
-        veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{GetRPCConn()})
+        veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{factory.GetConnection().(*rpc.Client)})
 {{end}}
     }) // RegisterClientInit
 }

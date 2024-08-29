@@ -18,7 +18,7 @@ func newConn() (*rpc.Client, error) {
 	return rpc.Dial("tcp", "localhost:1234")
 }
 
-func GetRPCConn() *rpc.Client {
+func getRPCConn() *rpc.Client {
 	if conn.Load() != nil {
 		return conn.Load()
 	}
@@ -66,8 +66,15 @@ func server() {
 	}
 }
 
+type ConnFactory struct {
+}
+
+func (c ConnFactory) GetConnection() any {
+	return getRPCConn()
+}
+
 func client() {
-	veil.VeilInitClient()
+	veil.VeilInitClient(ConnFactory{})
 
 	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
 

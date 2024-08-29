@@ -6,21 +6,26 @@ import (
 	"reflect"
 )
 
-type Init func()
+type ClientInit func(factory ConnectionFactory)
+type ServerInit func()
 
-var clientInits = []Init{}
-var serverInits = []Init{}
+var clientInits = []ClientInit{}
+var serverInits = []ServerInit{}
 
-func RegisterClientInit(i Init) {
+func RegisterClientInit(i ClientInit) {
 	clientInits = append(clientInits, i)
 }
-func RegisterServerInit(i Init) {
+func RegisterServerInit(i ServerInit) {
 	serverInits = append(serverInits, i)
 }
 
-func VeilInitClient() {
+type ConnectionFactory interface {
+	GetConnection() any
+}
+
+func VeilInitClient(factory ConnectionFactory) {
 	for _, i := range clientInits {
-		i()
+		i(factory)
 	}
 }
 
