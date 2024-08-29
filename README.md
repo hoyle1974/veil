@@ -84,7 +84,16 @@ fmt.Println(err)
 
 This is simply a prototype to explore the design.  Next steps will include:
 
-* Support for other RPC paradigms, maybe grpc
 * More configurability
     * generated struct names 
     * generated file names
+    * more moduler templates
+* unit tests
+    * In the library itself
+    * generated helper code to test client & server locally with mock networks
+* Add support for:
+    * other RPC paradimgs like grpc
+    * authentication, authorization
+    * service discovery 
+    * rate limiting
+    * ciruit breaker 
