@@ -3,11 +3,37 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/rpc"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/hoyle1974/veil/veil"
 )
+
+var conn atomic.Pointer[rpc.Client]
+
+func newConn() (*rpc.Client, error) {
+	return rpc.Dial("tcp", "localhost:1234")
+}
+
+func GetRPCConn() *rpc.Client {
+	if conn.Load() != nil {
+		return conn.Load()
+	}
+
+	db, err := newConn()
+	if err != nil {
+		panic(err)
+	}
+
+	old := conn.Swap(db)
+	if old != nil {
+		old.Close()
+	}
+	return db
+}
 
 func server() {
 	fmt.Println("server.")
@@ -20,6 +46,23 @@ func server() {
 	}
 	if err := veil.Serve(&UserService{}); err != nil {
 		panic(err)
+	}
+
+	// Start a TCP listener
+	listener, err := net.Listen("tcp", ":1234")
+	if err != nil {
+		fmt.Println("Listen error:", err)
+		return
+	}
+
+	// Accept connections and serve requests
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Accept error:", err)
+			continue
+		}
+		go rpc.ServeConn(conn)
 	}
 }
 

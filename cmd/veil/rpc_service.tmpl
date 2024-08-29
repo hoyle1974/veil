@@ -90,7 +90,7 @@ func init() {
     
 	veil.RegisterClientInit(func() {
 {{range .Structs}}
-        veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{veil.GetConn()})
+        veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{GetRPCConn()})
 {{end}}
     }) // RegisterClientInit
 }

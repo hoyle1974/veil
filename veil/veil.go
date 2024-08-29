@@ -3,10 +3,7 @@ package veil
 import (
 	"errors"
 	"fmt"
-	"net"
-	"net/rpc"
 	"reflect"
-	"sync/atomic"
 )
 
 type Init func()
@@ -34,47 +31,7 @@ func VeilInitServer() {
 	go StartServices()
 }
 
-var conn atomic.Pointer[rpc.Client]
-
-func newConn() (*rpc.Client, error) {
-	return rpc.Dial("tcp", "localhost:1234")
-}
-
-func GetConn() *rpc.Client {
-	if conn.Load() != nil {
-		return conn.Load()
-	}
-
-	db, err := newConn()
-	if err != nil {
-		panic(err)
-	}
-
-	old := conn.Swap(db)
-	if old != nil {
-		old.Close()
-	}
-	return db
-}
-
 func StartServices() {
-
-	// Start a TCP listener
-	listener, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		fmt.Println("Listen error:", err)
-		return
-	}
-
-	// Accept connections and serve requests
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println("Accept error:", err)
-			continue
-		}
-		go rpc.ServeConn(conn)
-	}
 }
 
 var serviceRegistry = []ServiceRegistry{}
@@ -84,8 +41,6 @@ type ServiceRegistry interface {
 }
 
 func RegisterService(service ServiceRegistry) {
-	fmt.Println("RegisterService: ", reflect.TypeOf(service))
-
 	serviceRegistry = append(serviceRegistry, service)
 }
 
