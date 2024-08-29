@@ -20,3 +20,62 @@ func (r *RoomService) MyCall(ctx context.Context, name string, value int) (strin
 }
 ```
 
+When you run '''go generate''' on your code it will find all structs with a @d:service comment and work on exposing all properly defined methods on that struct.  The method call must be exported (upper case name), the first argument must be a context.Context and the last reurn value will be an error.
+
+Using Veil they would expose this struct via RPC like this
+
+```
+veil.VeilInitServer()
+
+// Make Foo visible remotely
+if err := veil.Serve(&Foo{}); err != nil {
+	panic(err)
+}
+
+// Setup net/rpc like normal
+// Start a TCP listener
+listener, err := net.Listen("tcp", ":1234")
+if err != nil {
+	fmt.Println("Listen error:", err)
+	return
+}
+
+// Accept connections and serve requests
+for {
+	conn, err := listener.Accept()
+	if err != nil {
+		fmt.Println("error:", err)
+		continue
+	}
+	go rpc.ServeConn(conn)
+}
+```
+
+Now from a client they could do this
+
+```
+// Connection factory is a user supplied interface GetConnection() method that returns an opaque
+// connection for client calls.  In this case it would return a *rpc.Client
+veil.VeilInitClient(ConnFactory{})
+
+// Create a context, because this will be a network call
+ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+
+// Lookup a client to talk to our service with the generated interface
+foo, err := veil.Lookup[Foo_Interface]()
+if err != nil {
+	panic(err)
+}
+
+// Now we can call the remote function
+ret, err := foo.MyCall(ctx, "Jack", 5)
+if err != nil {
+    panic(err)
+}
+fmt.Println(ret)
+
+// This call will return the error
+_, err := foo.MyCall(ctx, "Jack", -1)
+fmt.Println(err)
+
+```
