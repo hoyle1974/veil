@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // @d:service
@@ -21,7 +22,11 @@ func (r *RoomService) RemoveUser(ctx context.Context, roomId string, userId stri
 }
 
 func (r *RoomService) Broadcast(ctx context.Context, roomId string, msg string) (bool, error) {
-	fmt.Println("Broadcast")
+	fmt.Println("Broadcast - start")
+
+	time.Sleep(time.Duration(5) * time.Second)
+
+	fmt.Println("Broadcast - end")
 
 	return true, nil
 }

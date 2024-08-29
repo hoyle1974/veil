@@ -4,7 +4,7 @@ package {{.PackageName}}
 import (
     "context"
     "github.com/hoyle1974/veil/veil"
-	"go.mongodb.org/mongo-driver/bson"
+    "github.com/keegancsmith/rpc"
 {{range .Packages}}     "{{.}}"
 {{end}}
 )
@@ -32,12 +32,12 @@ func (r *{{$struct.RPCName}}) RPC_Set_Service(service any) error {
 
 {{ $struct = . }}
 {{range .Methods}}
-func (r *{{$struct.RPCName}}) {{.Name}}(request *{{$struct.RemoteImplName}}_{{.Name}}_Request, reply *[]any) error {
+func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context, request *{{$struct.RemoteImplName}}_{{.Name}}_Request, reply *[]any) error {
 	if (r.service == nil) {
         return errors.New("service {{.Name}} not initialized")
     }
     {{range $idx, $element := .Returns}} {{if $idx}},{{end}} ret{{$idx}} {{end}} := r.service.{{.Name}}(
-		context.Background(),{{range .Args}}
+		ctx,{{range .Args}}
         request.{{title .Name}},{{end}}
 	){{range $idx, $element :=  .Returns }}
     *reply = append(*reply, ret{{$idx}}){{end}}
@@ -63,7 +63,7 @@ func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},
     reply := []any{}
 {{range $index, $element := .Returns}}      var result{{$index}} {{$element}}
 {{end}}
-    err := r.conn.Call("{{$save.RPCName}}.{{.Name}}", request, &reply)
+    err := r.conn.Call(ctx, "{{$save.RPCName}}.{{.Name}}", request, &reply)
     if err != nil {
         result{{ lastItemIndex .Returns }} = err
 	} else { {{range $index, $element := .Returns}} 
@@ -82,7 +82,9 @@ func init() {
 	veil.RegisterServerInit(func() {
 {{range .Structs}}
             r := &{{.RPCName}}{}
-            rpc.Register(r)
+            if err := rpc.Register(r); err!=nil {
+                panic(err)
+            }
             veil.RegisterService(r)
 {{end}}
     }) // RegisterServerInit

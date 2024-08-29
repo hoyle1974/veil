@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/rpc"
 	"os"
 	"sync/atomic"
 	"time"
+
+	"github.com/keegancsmith/rpc"
 
 	"github.com/hoyle1974/veil/veil"
 )
@@ -36,7 +37,7 @@ func getRPCConn() *rpc.Client {
 }
 
 func server() {
-	fmt.Println("server.")
+	fmt.Println("-- server --")
 
 	veil.VeilInitServer()
 
@@ -57,11 +58,13 @@ func server() {
 
 	// Accept connections and serve requests
 	for {
+		fmt.Println("Waiting for a connection")
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println("Accept error:", err)
 			continue
 		}
+		fmt.Println("Connection received")
 		go rpc.ServeConn(conn)
 	}
 }
@@ -74,6 +77,7 @@ func (c ConnFactory) GetConnection() any {
 }
 
 func client() {
+	fmt.Println("-- client --")
 	veil.VeilInitClient(ConnFactory{})
 
 	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
@@ -107,17 +111,15 @@ func client() {
 	if _, _, err = rooms.AddUser(ctx, roomId, userId2); err != nil {
 		panic(err)
 	}
-	if _, err = rooms.Broadcast(ctx, roomId, "Hello Everyone!"); err != nil {
+	if value, err := rooms.Broadcast(ctx, roomId, "Hello Everyone!"); err != nil {
 		panic(err)
+	} else {
+		fmt.Println("Broadcast Value = ", value)
 	}
 }
 
-// func main() {
-
-// }
-
 func main() {
-	if os.Args[1] == "server" {
+	if len(os.Args) == 1 || os.Args[1] == "server" {
 		server()
 	}
 	if os.Args[1] == "client" {
