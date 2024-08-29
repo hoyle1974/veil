@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/hoyle1974/veil/veil_internal"
 )
 
 // Should return an opaque type that can be cast and used by a client
@@ -17,49 +19,25 @@ type ConnectionFactory interface {
 type ClientInit func(factory ConnectionFactory)
 type ServerInit func()
 
-var clientInits = []ClientInit{}
-var serverInits = []ServerInit{}
-
-// INTERNAL - Register code to be run when client library is initialized
-func RegisterClientInit(i ClientInit) {
-	clientInits = append(clientInits, i)
-}
-
-// INTERNAL - Register code to be run when server library is intiialized
-func RegisterServerInit(i ServerInit) {
-	serverInits = append(serverInits, i)
-}
-
 // Clients should call this before client calls are executed.
 func VeilInitClient(factory ConnectionFactory) {
-	for _, i := range clientInits {
+	for _, i := range veil_internal.ClientInits {
 		i(factory)
 	}
 }
 
 // Servers should call this to start the server
 func VeilInitServer() {
-	for _, i := range serverInits {
+	for _, i := range veil_internal.ServerInits {
 		i()
 	}
-}
-
-var serviceRegistry = []ServiceRegistry{}
-
-type ServiceRegistry interface {
-	RPC_Bind_Service(service any) error
-}
-
-// INTERNAL - Used to register generated RPC services
-func RegisterService(service ServiceRegistry) {
-	serviceRegistry = append(serviceRegistry, service)
 }
 
 // Library users should call this with an instantiated version of their service
 // that they want to be exposed remotely.
 func Serve(service any) error {
 	match := false
-	for _, sr := range serviceRegistry {
+	for _, sr := range veil_internal.ServiceRegistry {
 		err := sr.RPC_Bind_Service(service)
 		if err == nil {
 			match = true
@@ -71,17 +49,10 @@ func Serve(service any) error {
 	return nil
 }
 
-var remoteImpl = []any{}
-
-// INTERNAL - Registers remote implementations for client use
-func RegisterRemoteImpl(service any) {
-	remoteImpl = append(remoteImpl, service)
-}
-
 // Can be used to lookup a remote implementation by interface type
 func Lookup[T any]() (T, error) {
 	interfaceType := reflect.TypeOf((*T)(nil)).Elem()
-	for _, item := range remoteImpl {
+	for _, item := range veil_internal.RemoteImpl {
 		itemType := reflect.TypeOf(item)
 		if itemType.AssignableTo(interfaceType) || itemType.Implements(interfaceType) {
 			return item.(T), nil

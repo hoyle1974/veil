@@ -4,6 +4,7 @@ package {{.PackageName}}
 import (
     "context"
     "github.com/hoyle1974/veil/veil"
+	"github.com/hoyle1974/veil/veil_internal"
     "github.com/keegancsmith/rpc"
 {{range .Packages}}     "{{.}}"
 {{end}}
@@ -87,20 +88,20 @@ func internal_{{$save.RemoteImplName}}_nilGet[T any](a any) T {
 
 func init() {
 
-	veil.RegisterServerInit(func() {
+	veil_internal.RegisterServerInit(func() {
 {{range .Structs}}
             r := &{{.RPCName}}{}
             if err := rpc.Register(r); err!=nil {
                 panic(err)
             }
-            veil.RegisterService(r)
+            veil_internal.RegisterService(r)
 {{end}}
     }) // RegisterServerInit
 
     
-	veil.RegisterClientInit(func(factory veil.ConnectionFactory) {
+	veil_internal.RegisterClientInit(func(factory veil_internal.ConnectionFactory) {
 {{range .Structs}}
-        veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{factory.GetConnection().(*rpc.Client)})
+        veil_internal.RegisterRemoteImpl(&{{ .RemoteImplName}}{factory.GetConnection().(*rpc.Client)})
 {{end}}
     }) // RegisterClientInit
 }
