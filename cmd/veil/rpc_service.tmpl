@@ -17,6 +17,35 @@ type {{.InterfaceName}} interface {
     {{.Name}}(ctx context.Context{{range .Args}}, {{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}){{end}}
 }
 
+type {{.RPCName}} struct {
+    service *{{.Name}}
+}
+
+func (r *{{$struct.RPCName}}) RPC_Set_Service(service any) error {
+    s, ok := service.(*{{.Name}})
+    if !ok {
+        return errors.New("not supported service")
+    }
+    r.service = s
+    return nil
+}
+
+{{ $struct = . }}
+{{range .Methods}}
+func (r *{{$struct.RPCName}}) {{.Name}}(request *{{$struct.RemoteImplName}}_{{.Name}}_Request, reply *[]any) error {
+	if (r.service == nil) {
+        return errors.New("service {{.Name}} not initialized")
+    }
+    {{range $idx, $element := .Returns}} {{if $idx}},{{end}} ret{{$idx}} {{end}} := r.service.{{.Name}}(
+		context.Background(),{{range .Args}}
+        request.{{title .Name}},{{end}}
+	){{range $idx, $element :=  .Returns }}
+    *reply = append(*reply, ret{{$idx}}){{end}}
+    
+	return nil
+}
+{{end}}
+
 // This is a remote implementation client that will send RPC commands to a remote '{{.Name}}'
 type {{.RemoteImplName}} struct {
     conn *rpc.Client
@@ -29,19 +58,12 @@ type {{$save.RemoteImplName}}_{{.Name}}_Request struct { {{range .Args}}
 }
 // Method
 func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
-    data, err := bson.Marshal({{$save.RemoteImplName}}_{{.Name}}_Request{ {{range $index, $element := .Args}}{{if $index}},{{end}}{{$element.Name}}{{end}} })
-	if err != nil {
-		panic(err)
-	}
-    request := veil.Request{ 
-		Service: "{{$.PackageName}}.{{$struct.Name}}",
-		Method:  "{{.Name}}",
-		Args:    data,
-	}
+    request := {{$save.RemoteImplName}}_{{.Name}}_Request{ {{range $index, $element := .Args}}{{if $index}},{{end}}{{$element.Name}}{{end}} }
+
     reply := []any{}
 {{range $index, $element := .Returns}}      var result{{$index}} {{$element}}
 {{end}}
-    err = r.conn.Call("VeilRPC.Call", request, &reply)
+    err := r.conn.Call("{{$save.RPCName}}.{{.Name}}", request, &reply)
     if err != nil {
         result{{ lastItemIndex .Returns }} = err
 	} else { {{range $index, $element := .Returns}} 
@@ -55,38 +77,21 @@ func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},
 
 
 
-
 func init() {
 
 	veil.RegisterServerInit(func() {
 {{range .Structs}}
-{{ $struct := . }}
-            veil.RegisterService("{{$.PackageName}}.{{$struct.Name}}", func(s any, method string, arg any, reply *[]any) {
-{{ $save := . }}
-{{range .Methods}}
-if method == "{{.Name}}" {
-        r := {{$save.RemoteImplName}}_{{.Name}}_Request{}
-        err := bson.Unmarshal(arg.([]byte), &r)
-        if err != nil {
-			panic(err)
-		}
-        {{range $idx, $element := .Returns}} {{if $idx}},{{end}} ret{{$idx}} {{end}} := s.({{$struct.InterfaceName}}).{{.Name}}(
-			context.Background(),{{range .Args}}
-            r.{{title .Name}},{{end}}
-		){{range $idx, $element :=  .Returns }}
-        *reply = append(*reply, ret{{$idx}}){{end}}
-}
+            r := &{{.RPCName}}{}
+            rpc.Register(r)
+            veil.RegisterService(r)
 {{end}}
-		}) 
-{{end}}
-    }) 
+    }) // RegisterServerInit
 
     
 	veil.RegisterClientInit(func() {
-    {{range .Structs}}
+{{range .Structs}}
         veil.RegisterRemoteImpl(&{{ .RemoteImplName}}{veil.GetConn()})
-    {{end}}
-    })
+{{end}}
+    }) // RegisterClientInit
 }
-
 

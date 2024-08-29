@@ -1,11 +1,11 @@
 package veil
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/rpc"
 	"reflect"
-	"sync"
 	"sync/atomic"
 )
 
@@ -57,47 +57,7 @@ func GetConn() *rpc.Client {
 	return db
 }
 
-// func Call(request Request, reply *[]any) error {
-// 	conn, err := newConn()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer conn.Close()
-
-// 	err = conn.Call("MyService.MyCall", request, &reply)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
-type Request struct {
-	Service string
-	Method  string
-	Args    []byte
-}
-
-type VeilRPC struct {
-}
-
-type RPCCB func(any, string, any, *[]any)
-
-var slock sync.Mutex
-var services = map[string]any{}
-var cbs = map[string]RPCCB{}
-
-func RegisterService(service string, cb RPCCB) {
-	cbs[service] = cb
-}
-
-func (t *VeilRPC) Call(request *Request, reply *[]any) error {
-	cbs[request.Service](services[request.Service], request.Method, request.Args, reply)
-	return nil
-}
-
 func StartServices() {
-	// Register the Arithmetic type with the RPC server
-	rpc.Register(&VeilRPC{})
 
 	// Start a TCP listener
 	listener, err := net.Listen("tcp", ":1234")
@@ -117,16 +77,30 @@ func StartServices() {
 	}
 }
 
-type InstanceId string
+var serviceRegistry = []ServiceRegistry{}
 
-func Serve(service any) InstanceId {
-	slock.Lock()
-	defer slock.Unlock()
+type ServiceRegistry interface {
+	RPC_Set_Service(service any) error
+}
 
-	name := reflect.TypeOf(service).String()[1:]
-	services[name] = service
+func RegisterService(service ServiceRegistry) {
+	fmt.Println("RegisterService: ", reflect.TypeOf(service))
 
-	return InstanceId("")
+	serviceRegistry = append(serviceRegistry, service)
+}
+
+func Serve(service any) error {
+	match := false
+	for _, sr := range serviceRegistry {
+		err := sr.RPC_Set_Service(service)
+		if err == nil {
+			match = true
+		}
+	}
+	if !match {
+		return errors.New("service not supported")
+	}
+	return nil
 }
 
 var remoteImpl = []any{}

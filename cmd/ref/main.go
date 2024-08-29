@@ -15,9 +15,12 @@ func server() {
 	veil.VeilInitServer()
 
 	// Make these visible remotely
-	veil.Serve(&RoomService{})
-	veil.Serve(&UserService{})
-
+	if err := veil.Serve(&RoomService{}); err != nil {
+		panic(err)
+	}
+	if err := veil.Serve(&UserService{}); err != nil {
+		panic(err)
+	}
 }
 
 func client() {

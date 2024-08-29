@@ -48,6 +48,7 @@ type Method struct {
 
 type Struct struct {
 	Name           string
+	RPCName        string
 	InterfaceName  string
 	RemoteImplName string
 	Methods        []Method
@@ -175,6 +176,7 @@ func main() {
 					Name:           typeSpec.Name.Name,
 					InterfaceName:  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
 					RemoteImplName: fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
+					RPCName:        fmt.Sprintf("%s_RPC", typeSpec.Name.Name),
 					Methods:        methods,
 				})
 
