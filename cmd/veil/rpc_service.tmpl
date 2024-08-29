@@ -21,7 +21,7 @@ type {{.RPCName}} struct {
     service *{{.Name}}
 }
 
-func (r *{{$struct.RPCName}}) RPC_Set_Service(service any) error {
+func (r *{{$struct.RPCName}}) RPC_Bind_Service(service any) error {
     s, ok := service.(*{{.Name}})
     if !ok {
         return errors.New("not supported service")
@@ -67,11 +67,19 @@ func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},
     if err != nil {
         result{{ lastItemIndex .Returns }} = err
 	} else { {{range $index, $element := .Returns}} 
-        result{{$index}} = veil.NilGet[{{$element}}](reply[{{$index}}]){{end}}
+        result{{$index}} = internal_{{$save.RemoteImplName}}_nilGet[{{$element}}](reply[{{$index}}]){{end}}
 	}
     return {{range $index, $element := .Returns}}{{if $index}},{{end}}result{{$index}} {{end}}
 }
 {{end}}
+
+func internal_{{$save.RemoteImplName}}_nilGet[T any](a any) T {
+	var zero T
+	if a == nil {
+		return zero
+	}
+	return a.(T)
+}
 
 {{end}}
 
