@@ -86,5 +86,5 @@ This is simply a prototype to explore the design.  Next steps will include:
 
 * Support for other RPC paradigms, maybe grpc
 * More configurability
-** generated struct names 
-** generated file names
+    * generated struct names 
+    * generated file names
