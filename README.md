@@ -7,7 +7,7 @@ Veil simplifies RPC code while trying to not be "magical".  It consist of two co
 A user might write a struct that behaves like a service like this:
 
 ```
-// @d:service
+// @v:service
 type Foo struct {
 }
 
@@ -20,7 +20,7 @@ func (r *RoomService) MyCall(ctx context.Context, name string, value int) (strin
 }
 ```
 
-When you run ```go generate``` on your code it will find all structs with a @d:service comment and work on exposing all properly defined methods on that struct.  The method call must be exported (upper case name), the first argument must be a context.Context and the last reurn value will be an error.
+When you run ```go generate``` on your code it will find all structs with a @v:service comment and work on exposing all properly defined methods on that struct.  The method call must be exported (upper case name), the first argument must be a context.Context and the last reurn value will be an error.
 
 Using Veil they would expose this struct via RPC like this
 

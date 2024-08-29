@@ -108,7 +108,7 @@ func main() {
 		// Check for comments first.
 		if cg, ok := n.(*ast.CommentGroup); ok {
 			for _, comment := range cg.List {
-				if strings.Contains(comment.Text, "d:service") {
+				if strings.Contains(comment.Text, "v:service") {
 					lastComment = comment.Text // Save the comment if it contains "d:service"
 				}
 			}

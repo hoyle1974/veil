@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// @d:service
+// @v:service
 type UserService struct {
 }
 
