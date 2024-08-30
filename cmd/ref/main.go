@@ -112,6 +112,7 @@ func client() {
 		panic(err)
 	}
 	if value, err := rooms.Broadcast(ctx, roomId, "Hello Everyone!"); err != nil {
+		fmt.Println("Broadcast had a problem!")
 		panic(err)
 	} else {
 		fmt.Println("Broadcast Value = ", value)

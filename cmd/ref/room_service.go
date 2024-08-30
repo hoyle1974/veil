@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// @d:service
+// @v:service
 type RoomService struct {
 }
 
