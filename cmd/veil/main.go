@@ -18,6 +18,9 @@ import (
 //go:embed rpc_service.tmpl
 var rpc_service []byte
 
+//go:embed gokit_service.tmpl
+var gokit_service []byte
+
 func getImports(file *ast.File) []string {
 	var importPaths []string
 	for _, imp := range file.Imports {
@@ -63,15 +66,17 @@ type Data struct {
 }
 
 func main() {
+	// templateFile := "rpc_service.tmpl"
+	templateFile := "gokit_service.tmpl"
 
-	tmpl := template.New("rpc_service.tmpl")
+	tmpl := template.New(templateFile)
 	tmpl.Funcs(map[string]any{
 		"title":         title,
 		"lastItemIndex": lastItemIndex,
 	})
 
 	// Load templates
-	tmpl, err := tmpl.Parse(string(rpc_service))
+	tmpl, err := tmpl.Parse(string(gokit_service))
 	if err != nil {
 		panic(err)
 	}
