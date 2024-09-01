@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -8,16 +9,7 @@ import (
 )
 
 func server() {
-	// svc := FooService{}
-
-	// FooService_SaySomething_Handler := httptransport.NewServer(
-	// 	make_FooService_SaySomething_Endpoint(svc),
-	// 	decodeFooService_SaySomething_Request,
-	// 	encodeResponse,
-	// )
-
-	// http.Handle("/FooService/SaySomething", FooService_SaySomething_Handler)
-	// log.Fatal(http.ListenAndServe(":8181", nil))
+	fmt.Println("-- server --")
 
 	veil.VeilInitServer()
 

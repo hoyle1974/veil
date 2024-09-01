@@ -1,56 +1,33 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
+
+	"github.com/hoyle1974/veil/veil"
 )
 
+type ConnFactory struct {
+}
+
+func (c ConnFactory) GetConnection() any {
+	return nil
+}
+
 func client() {
+	fmt.Println("-- client --")
 
-	url := "http://localhost:8181/BarService/SaySomething"
+	veil.VeilInitClient(ConnFactory{})
 
-	// Marshal the JSON data into a byte buffer
-	jsonData, err := json.Marshal(BarService_SaySomething_Request{Name: "Jack", Value: 23})
+	bar, err := veil.Lookup[BarService_Interface]()
 	if err != nil {
-		fmt.Println("error marshalling JSON:", err)
-		return
+		panic(err)
 	}
 
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	result, err := bar.SaySomething(context.Background(), "Jack", 2431)
 	if err != nil {
-		fmt.Println("error creating request:", err)
-		return
-
+		panic(err)
 	}
 
-	// Set the content type header to application/json
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create a new HTTP client
-	client := &http.Client{}
-
-	// Make the HTTP request
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error making request:", err)
-		return
-	}
-
-	// Check the response status code
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Error: Status code", resp.StatusCode)
-		return
-	}
-
-	req2, _ := decodeBarService_SaySomething_Response(context.Background(), resp)
-	fmt.Println(req2)
-
-	// Read the response body
-	defer resp.Body.Close()
-	// ... (process response body if needed)
-	fmt.Println("Request successful!")
+	fmt.Println("Result:", result)
 }

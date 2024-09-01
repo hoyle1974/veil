@@ -11,5 +11,5 @@ require (
 
 require (
 	github.com/go-kit/kit v0.13.0
-	github.com/keegancsmith/rpc v1.3.0 // indirect
+	github.com/keegancsmith/rpc v1.3.0
 )

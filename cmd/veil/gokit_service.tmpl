@@ -47,8 +47,57 @@ type {{$struct.Name}}_{{.Name}}_Response struct { {{range $index, $type := .Retu
     Arg{{$index}} {{$type}}{{end}}
 }
 
-func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context, request *{{$struct.Name}}_{{.Name}}_Request, reply *[]any) error {
-	return nil
+func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context {{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
+	
+	url := "http://localhost:8181/{{$struct.Name}}/{{.Name}}"
+	{{range $index, $element := .Returns}}
+	var arg{{$index}} {{$element}}{{end}}
+
+	// Marshal the JSON data into a byte buffer
+	jsonData, err := json.Marshal({{$struct.Name}}_{{.Name}}_Request{ {{range .Args}}
+		{{title .Name}} : {{.Name}},{{end}}
+	})
+	if err != nil {
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+
+	// Create a new HTTP request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+	
+	// Set the content type header to application/json
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+
+	// Make the HTTP request
+	resp, err := client.Do(req)
+	if err != nil {
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+
+	// Check the response status code
+	if resp.StatusCode != http.StatusOK {
+		//fmt.Println("Error: Status code", resp.StatusCode)
+		arg{{lastItemIndex .Returns}} = fmt.Errorf("status code %d",resp.StatusCode)
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+
+	response, err := decode{{$struct.Name}}_{{.Name}}_Response(context.Background(), resp)
+	if err!=nil {
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+
+	// Read the response body
+	defer resp.Body.Close()
+	
+	return {{range $index, $element := .Returns}} {{if $index}},{{end}}response.Arg{{$index}} {{end}}
+
 }
 
 func encode{{$struct.Name}}_{{.Name}}_Response(_ context.Context, w http.ResponseWriter, response interface{}) error {
@@ -63,12 +112,12 @@ func decode{{$struct.Name}}_{{.Name}}_Request(_ context.Context, r *http.Request
 	return request, nil
 }
 
-func decode{{$struct.Name}}_{{.Name}}_Response(_ context.Context, r *http.Response) (interface{}, error) {
-	var request {{$struct.Name}}_{{.Name}}_Response
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
+func decode{{$struct.Name}}_{{.Name}}_Response(_ context.Context, r *http.Response) ({{$struct.Name}}_{{.Name}}_Response, error) {
+	var response {{$struct.Name}}_{{.Name}}_Response
+	if err := json.NewDecoder(r.Body).Decode(&response); err != nil {
+		return response, err
 	}
-	return request, nil
+	return response, nil
 }
 
 type {{$struct.Name}}_Container interface {
@@ -109,4 +158,12 @@ func init() {
 
 {{end}}
     }) // RegisterServerInit
+
+	veil_internal.RegisterClientInit(func(factory veil_internal.ConnectionFactory) {
+{{range .Structs}}
+        veil_internal.RegisterRemoteImpl(&{{ .RPCName}}{})
+{{end}}
+    }) // RegisterClientInit
+
 } //init
+
