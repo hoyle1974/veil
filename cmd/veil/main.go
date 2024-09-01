@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -65,6 +66,24 @@ type Data struct {
 	Name        string
 }
 
+func extractArguments(input string) (bool, []string) {
+	// Check if "v:service" is present
+	if !strings.Contains(input, "v:service") {
+		return false, nil
+	}
+
+	// Split the string after "v:service"
+	parts := strings.Split(input, "v:service ")
+	if len(parts) < 2 {
+		return false, nil
+	}
+
+	// Extract the arguments
+	arguments := strings.Fields(parts[1])
+
+	return true, arguments
+}
+
 func main() {
 	// templateFile := "rpc_service.tmpl"
 	templateFile := "gokit_service.tmpl"
@@ -75,12 +94,6 @@ func main() {
 		"lastItemIndex": lastItemIndex,
 	})
 
-	// Load templates
-	tmpl, err := tmpl.Parse(string(gokit_service))
-	if err != nil {
-		panic(err)
-	}
-
 	data := Data{}
 
 	// Replace "your/project/path" with the actual path to your project
@@ -90,7 +103,7 @@ func main() {
 	pkgName := os.Getenv("GOPACKAGE")
 
 	if fileName == "" {
-		fileName = "/Users/jstrohm/code/veil/cmd/ref/user_service.go"
+		fileName = "/Users/jstrohm/code/veil/cmd/gokit_example/bar_service.go"
 		pkgName = "main"
 	}
 	ifile := "impl_" + fileName
@@ -109,11 +122,23 @@ func main() {
 	// Store the comments in the file.
 	var lastComment string
 
+	template := ""
+	dir := ""
+
 	ast.Inspect(astFile, func(n ast.Node) bool {
 		// Check for comments first.
 		if cg, ok := n.(*ast.CommentGroup); ok {
 			for _, comment := range cg.List {
-				if strings.Contains(comment.Text, "v:service") {
+				if ok, args := extractArguments(comment.Text); ok {
+					// if strings.Contains(comment.Text, "v:service") {
+					// values := strings.Split(comment.Text, " ")
+					cl := flag.NewFlagSet("", flag.ExitOnError)
+					_template := cl.String("t", "template", "Template variable")
+					_dir := cl.String("d", "directory", "Directory")
+					cl.Parse(args)
+					template = *_template
+					dir = *_dir
+
 					lastComment = comment.Text // Save the comment if it contains "v:service"
 				}
 			}
@@ -190,6 +215,25 @@ func main() {
 
 		return true
 	})
+
+	if dir != dir {
+		panic(dir)
+	}
+
+	// Load templates
+	templateStr := rpc_service
+	switch template {
+	case "gokit":
+		templateStr = gokit_service
+	case "rpc":
+		templateStr = rpc_service
+	default:
+		panic(fmt.Sprintf("Unsupported template: %s", template))
+	}
+	tmpl, err = tmpl.Parse(string(templateStr))
+	if err != nil {
+		panic(err)
+	}
 
 	f, err := os.OpenFile(ifile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
