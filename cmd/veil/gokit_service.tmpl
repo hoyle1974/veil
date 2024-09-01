@@ -22,6 +22,7 @@ type {{.InterfaceName}} interface {
 
 type {{.RPCName}} struct {
     service *{{.Name}}
+	connFactory veil_internal.ConnectionFactory
 }
 func (r *{{.RPCName}}) Get() *{{.Name}} {
 	return r.service
@@ -49,7 +50,6 @@ type {{$struct.Name}}_{{.Name}}_Response struct { {{range $index, $type := .Retu
 
 func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context {{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
 	
-	url := "http://localhost:8181/{{$struct.Name}}/{{.Name}}"
 	{{range $index, $element := .Returns}}
 	var arg{{$index}} {{$element}}{{end}}
 
@@ -61,6 +61,8 @@ func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context {{range .Args}},{{.N
 		arg{{lastItemIndex .Returns}} = err
 		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
 	}
+
+	url := r.connFactory.GetConnection().(string)
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
@@ -161,7 +163,7 @@ func init() {
 
 	veil_internal.RegisterClientInit(func(factory veil_internal.ConnectionFactory) {
 {{range .Structs}}
-        veil_internal.RegisterRemoteImpl(&{{ .RPCName}}{})
+        veil_internal.RegisterRemoteImpl(&{{ .RPCName}}{ connFactory: factory})
 {{end}}
     }) // RegisterClientInit
 

@@ -11,7 +11,7 @@ type ConnFactory struct {
 }
 
 func (c ConnFactory) GetConnection() any {
-	return nil
+	return "http://localhost:8181/BarService/SaySomething"
 }
 
 func client() {

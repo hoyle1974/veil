@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -84,7 +83,11 @@ func (c *Config) GetTemplateString() string {
 	case "rpc":
 		templateStr = rpc_service
 	default:
-		panic(fmt.Sprintf("Unsupported template: %s", c.Template))
+		// PRetend the template string is a file
+		s, err := readFileAsString(c.Template)
+		if err != nil && s != "" {
+			c.ParseConfig(s)
+		}
 	}
 	return string(templateStr)
 }
