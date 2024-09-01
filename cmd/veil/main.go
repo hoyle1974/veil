@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -66,22 +65,22 @@ type Data struct {
 	Name        string
 }
 
-func extractArguments(input string) (bool, []string) {
+func extractArguments(input string) (bool, string) {
 	// Check if "v:service" is present
 	if !strings.Contains(input, "v:service") {
-		return false, nil
+		return false, ""
 	}
 
 	// Split the string after "v:service"
 	parts := strings.Split(input, "v:service ")
 	if len(parts) < 2 {
-		return false, nil
+		return false, ""
 	}
 
 	// Extract the arguments
-	arguments := strings.Fields(parts[1])
+	//arguments := strings.Fields(parts[1])
 
-	return true, arguments
+	return true, parts[1] //arguments
 }
 
 func main() {
@@ -106,7 +105,6 @@ func main() {
 		fileName = "/Users/jstrohm/code/veil/cmd/gokit_example/bar_service.go"
 		pkgName = "main"
 	}
-	ifile := "impl_" + fileName
 
 	data.Filename = fileName
 	data.PackageName = pkgName
@@ -122,8 +120,7 @@ func main() {
 	// Store the comments in the file.
 	var lastComment string
 
-	template := ""
-	dir := ""
+	config := lookupConfig()
 
 	ast.Inspect(astFile, func(n ast.Node) bool {
 		// Check for comments first.
@@ -132,12 +129,7 @@ func main() {
 				if ok, args := extractArguments(comment.Text); ok {
 					// if strings.Contains(comment.Text, "v:service") {
 					// values := strings.Split(comment.Text, " ")
-					cl := flag.NewFlagSet("", flag.ExitOnError)
-					_template := cl.String("t", "template", "Template variable")
-					_dir := cl.String("d", "directory", "Directory")
-					cl.Parse(args)
-					template = *_template
-					dir = *_dir
+					config.ParseConfig(args)
 
 					lastComment = comment.Text // Save the comment if it contains "v:service"
 				}
@@ -216,24 +208,12 @@ func main() {
 		return true
 	})
 
-	if dir != dir {
-		panic(dir)
-	}
-
-	// Load templates
-	templateStr := rpc_service
-	switch template {
-	case "gokit":
-		templateStr = gokit_service
-	case "rpc":
-		templateStr = rpc_service
-	default:
-		panic(fmt.Sprintf("Unsupported template: %s", template))
-	}
-	tmpl, err = tmpl.Parse(string(templateStr))
+	tmpl, err = tmpl.Parse(config.GetTemplateString())
 	if err != nil {
 		panic(err)
 	}
+
+	ifile := config.Directory + "/" + "impl_" + fileName
 
 	f, err := os.OpenFile(ifile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {

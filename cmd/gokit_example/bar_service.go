@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-// v:service -t gokit -d /tmp
+// v:service -t gokit
 type BarService struct{}
 
 func (f *BarService) SaySomething(ctx context.Context, name string, value int) (string, error) {
