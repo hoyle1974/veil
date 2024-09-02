@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// @v:service
+// @v:service -t rpc
 type UserService struct {
 }
 

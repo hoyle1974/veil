@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// @v:service
+// @v:service -t rpc
 type RoomService struct {
 }
 
