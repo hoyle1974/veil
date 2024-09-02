@@ -7,7 +7,7 @@ Veil simplifies RPC code while trying to not be "magical".  It consist of two co
 A user might write a struct that behaves like a service like this:
 
 ```
-// @v:service
+// @v:service -t rpc
 type Foo struct {
 }
 
@@ -21,6 +21,8 @@ func (r *RoomService) MyCall(ctx context.Context, name string, value int) (strin
 ```
 
 When you run ```go generate``` on your code it will find all structs with a @v:service comment and work on exposing all properly defined methods on that struct.  The method call must be exported (upper case name), the first argument must be a context.Context and the last reurn value will be an error.
+
+Currently veil supports net/rpc and gokit, these can be configured using the -t flag which can either be rpc (for net/rpc), gokit, or a path to a template of your chosing.  Instead of defining this in your code youc an put these options in a config file (in either ~/.veil or at the location defined in the environment variable VEIL_CONFIG_FILE).  You can also set the environment variable VEIL_CONFIG directly.
 
 Using Veil they would expose this struct via RPC like this
 
