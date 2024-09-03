@@ -30,7 +30,7 @@ The provided templates can be used as examples of how to make custom templates f
 
 These are written using Go's ```text/template``` package.  Veil will parse your code during the ```go generate``` command, collect all the annotated structs and then pass the data to the template function.
 
-The data it collects will be loaded in the datastructures defined in [model](https://github.com/hoyle1974/veil/blob/main/veil/model.go)
+The data it collects will be loaded in the datastructures defined in [model](https://github.com/hoyle1974/veil/blob/main/cmd/veil/models.go)
 
 There is still much more work needed for configurability but this is the initial prototype.
 
