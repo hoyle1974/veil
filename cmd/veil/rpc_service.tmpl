@@ -13,16 +13,16 @@ import (
 {{range .Structs}}
 {{ $struct := . }}
 // This is an interface that defines the publically exposed methods for the struct '{{.Name}}'
-type {{.InterfaceName}} interface {
+type {{.Name}}_Interface interface {
 {{range .Methods}}
     {{.Name}}(ctx context.Context{{range .Args}}, {{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}){{end}}
 }
 
-type {{.RPCName}} struct {
+type {{.Name}}_RPC struct {
     service *{{.Name}}
 }
 
-func (r *{{$struct.RPCName}}) RPC_Bind_Service(service any) error {
+func (r *{{$struct.Name}}_RPC) RPC_Bind_Service(service any) error {
     s, ok := service.(*{{.Name}})
     if !ok {
         return errors.New("not supported service")
@@ -33,7 +33,7 @@ func (r *{{$struct.RPCName}}) RPC_Bind_Service(service any) error {
 
 {{ $struct = . }}
 {{range .Methods}}
-func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context, request *{{$struct.RemoteImplName}}_{{.Name}}_Request, reply *[]any) error {
+func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context, request *{{$struct.Name}}_RemoteImpl_{{.Name}}_Request, reply *[]any) error {
 	if (r.service == nil) {
         return errors.New("service {{.Name}} not initialized")
     }
@@ -48,33 +48,33 @@ func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context, request *{{$struct.
 {{end}}
 
 // This is a remote implementation client that will send RPC commands to a remote '{{.Name}}'
-type {{.RemoteImplName}} struct {
+type {{.Name}}_RemoteImpl struct {
     conn *rpc.Client
 }
 {{ $save := . }}
 {{range .Methods}}
 // Request Object
-type {{$save.RemoteImplName}}_{{.Name}}_Request struct { {{range .Args}}
+type {{$save.Name}}_RemoteImpl_{{.Name}}_Request struct { {{range .Args}}
     {{title .Name}} {{.Type}}{{end}}
 }
 // Method
-func (r *{{$save.RemoteImplName}}) {{.Name}}(ctx context.Context{{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
-    request := {{$save.RemoteImplName}}_{{.Name}}_Request{ {{range $index, $element := .Args}}{{if $index}},{{end}}{{$element.Name}}{{end}} }
+func (r *{{$save.Name}}_RemoteImpl) {{.Name}}(ctx context.Context{{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
+    request := {{$save.Name}}_RemoteImpl_{{.Name}}_Request{ {{range $index, $element := .Args}}{{if $index}},{{end}}{{$element.Name}}{{end}} }
 
     reply := []any{}
 {{range $index, $element := .Returns}}      var result{{$index}} {{$element}}
 {{end}}
-    err := r.conn.Call(ctx, "{{$save.RPCName}}.{{.Name}}", request, &reply)
+    err := r.conn.Call(ctx, "{{$save.Name}}_RPC.{{.Name}}", request, &reply)
     if err != nil {
         result{{ lastItemIndex .Returns }} = err
 	} else { {{range $index, $element := .Returns}} 
-        result{{$index}} = internal_{{$save.RemoteImplName}}_nilGet[{{$element}}](reply[{{$index}}]){{end}}
+        result{{$index}} = internal_{{$save.Name}}_RemoteImpl_nilGet[{{$element}}](reply[{{$index}}]){{end}}
 	}
     return {{range $index, $element := .Returns}}{{if $index}},{{end}}result{{$index}} {{end}}
 }
 {{end}}
 
-func internal_{{$save.RemoteImplName}}_nilGet[T any](a any) T {
+func internal_{{$save.Name}}_RemoteImpl_nilGet[T any](a any) T {
 	var zero T
 	if a == nil {
 		return zero
@@ -90,7 +90,7 @@ func init() {
 
 	veil_internal.RegisterServerInit(func() {
 {{range .Structs}}
-            r := &{{.RPCName}}{}
+            r := &{{.Name}}_RPC{}
             if err := rpc.Register(r); err!=nil {
                 panic(err)
             }
@@ -101,7 +101,7 @@ func init() {
     
 	veil_internal.RegisterClientInit(func(factory veil_internal.ConnectionFactory) {
 {{range .Structs}}
-        veil_internal.RegisterRemoteImpl(&{{ .RemoteImplName}}{factory.GetConnection().(*rpc.Client)})
+        veil_internal.RegisterRemoteImpl(&{{ .Name}}_RemoteImpl{factory.GetConnection().(*rpc.Client)})
 {{end}}
     }) // RegisterClientInit
 }

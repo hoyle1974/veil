@@ -15,19 +15,19 @@ import (
 
 
 // This is an interface that defines the publically exposed methods for the struct '{{.Name}}'
-type {{.InterfaceName}} interface {
+type {{.Name}}_Interface interface {
 {{range .Methods}}
     {{.Name}}(ctx context.Context{{range .Args}}, {{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}){{end}}
 }
 
-type {{.RPCName}} struct {
+type {{.Name}}_RPC struct {
     service *{{.Name}}
 	connFactory veil_internal.ConnectionFactory
 }
-func (r *{{.RPCName}}) Get() *{{.Name}} {
+func (r *{{.Name}}_RPC) Get() *{{.Name}} {
 	return r.service
 }
-func (r *{{$struct.RPCName}}) RPC_Bind_Service(service any) error {
+func (r *{{$struct.Name}}_RPC) RPC_Bind_Service(service any) error {
     s, ok := service.(*{{.Name}})
     if !ok {
         return errors.New("not supported service")
@@ -48,7 +48,7 @@ type {{$struct.Name}}_{{.Name}}_Response struct { {{range $index, $type := .Retu
     Arg{{$index}} {{$type}}{{end}}
 }
 
-func (r *{{$struct.RPCName}}) {{.Name}}(ctx context.Context {{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
+func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
 	
 	{{range $index, $element := .Returns}}
 	var arg{{$index}} {{$element}}{{end}}
@@ -145,7 +145,7 @@ func init() {
 	veil_internal.RegisterServerInit(func() {
 {{range .Structs}}
 			{{$struct := . }}
-            r := &{{.RPCName}}{}
+            r := &{{.Name}}_RPC{}
             veil_internal.RegisterService(r)
 
 			{{range .Methods}}
@@ -163,7 +163,7 @@ func init() {
 
 	veil_internal.RegisterClientInit(func(factory veil_internal.ConnectionFactory) {
 {{range .Structs}}
-        veil_internal.RegisterRemoteImpl(&{{ .RPCName}}{ connFactory: factory})
+        veil_internal.RegisterRemoteImpl(&{{.Name}}_RPC{ connFactory: factory})
 {{end}}
     }) // RegisterClientInit
 

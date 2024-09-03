@@ -38,33 +38,6 @@ func lastItemIndex(a any) int {
 	return len(items) - 1
 }
 
-type Arg struct {
-	Name string
-	Type string
-}
-
-type Method struct {
-	Name    string
-	Args    []Arg
-	Returns []string
-}
-
-type Struct struct {
-	Name           string
-	RPCName        string
-	InterfaceName  string
-	RemoteImplName string
-	Methods        []Method
-}
-
-type Data struct {
-	Filename    string
-	PackageName string
-	Structs     []Struct
-	Packages    []string
-	Name        string
-}
-
 func extractArguments(input string) (bool, string) {
 	// Check if "v:service" is present
 	if !strings.Contains(input, "v:service") {
@@ -195,11 +168,11 @@ func main() {
 				}
 
 				data.Structs = append(data.Structs, Struct{
-					Name:           typeSpec.Name.Name,
-					InterfaceName:  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
-					RemoteImplName: fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
-					RPCName:        fmt.Sprintf("%s_RPC", typeSpec.Name.Name),
-					Methods:        methods,
+					//InterfaceName:  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
+					//RemoteImplName: fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
+					//RPCName:        fmt.Sprintf("%s_RPC", typeSpec.Name.Name),
+					Name:    typeSpec.Name.Name,
+					Methods: methods,
 				})
 
 			}
