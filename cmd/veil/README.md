@@ -34,3 +34,15 @@ The data it collects will be loaded in the datastructures defined in [model](htt
 
 There is still much more work needed for configurability but this is the initial prototype.
 
+It's best to start with an existing template and see how it works.  Veil provides a couple of internal function that your template can use to get setup properly.  You will see our templates define the following:
+
+* An interface that can be used to lookup remote implementations if you want
+* A binding between the RPC and the Service that will be exposed.
+* A Remote implementation that can be lookedup by interface and make calls to the RPC service
+* An init section that registers calls for both the clienet and server that will be executed on initialization.
+    * The client code will be passed a factory that provides an opaque reference to a connecion that is provided on calling ```veil.VeilInitClient(...)``` 
+    * The server call will register the RPC services and uses a ```RPC_Bind_Service(service any) error``` method to bind to the actual service implementation that you will provide on your server when you want to expose a service by calling ```veil.Serve(...)```
+
+    
+
+
