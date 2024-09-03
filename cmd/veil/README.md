@@ -21,4 +21,11 @@ You are repsonsible for the RPC server's initialization.  You can use Veil to lo
 
 Please see the examples in cmd/gokit_example and cmd/gorpc_example for complete simple examples.
 
+# How to write your own templates 
+
+The provided templates can be used as examples of how to make custom templates for your own RPC needs:
+
+* [net/rpc](https://github.com/hoyle1974/veil/blob/main/cmd/veil/rpc_service.tmpl)
+* [gokit](https://github.com/hoyle1974/veil/blob/main/cmd/veil/gokit_service.tmpl)
+
 TODO - Documentation on how to use Veil to generate bindings that match your own needs if the default ones do not.

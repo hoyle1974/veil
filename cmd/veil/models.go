@@ -12,13 +12,13 @@ type Method struct {
 	Returns []string // The return value types
 }
 
-// Datastructure describe a struct that we want to expose publically
+// Describes a struct that we want to expose publically
 type Struct struct {
 	Name    string   // The name of the struct
 	Methods []Method // The methods that will be made public
 }
 
-type Data struct {
+type VeilData struct {
 	Filename    string   // The original filename
 	PackageName string   // The package
 	Structs     []Struct // The structs that will be exposed remotely

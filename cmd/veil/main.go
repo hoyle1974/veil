@@ -30,9 +30,12 @@ func getImports(file *ast.File) []string {
 	return importPaths
 }
 
+// Uppercases the first letter of a string, useful for creating request objects from method arguments
 func title(in string) string {
 	return cases.Title(language.English).String(in)
 }
+
+// Give the last index value of an array, useful for getting the final error argument in an Args list
 func lastItemIndex(a any) int {
 	items := a.([]string)
 	return len(items) - 1
@@ -66,7 +69,7 @@ func main() {
 		"lastItemIndex": lastItemIndex,
 	})
 
-	data := Data{}
+	data := VeilData{}
 
 	// Replace "your/project/path" with the actual path to your project
 	// projectPath :=  "/Users/jstrohm/code/veil/cmd/veil"
