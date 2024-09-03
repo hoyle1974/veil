@@ -20,11 +20,11 @@ func (r *RoomService) MyCall(ctx context.Context, name string, value int) (strin
 }
 ```
 
-When you run ```go generate``` on your code it will find all structs with a @v:service comment and work on exposing all properly defined methods on that struct.  The method call must be exported (upper case name), the first argument must be a context.Context and the last reurn value will be an error.
+When you run ```go generate``` on your code it will find all structs with a @v:service comment and work on exposing all properly defined methods on that struct.  The method call must be exported (upper case name), the first argument must be a context.Context and the last return value will be an error.
 
-Currently veil supports net/rpc and gokit, these can be configured using the -t flag which can either be rpc (for net/rpc), gokit, or a path to a template of your chosing.  Instead of defining this in your code youc an put these options in a config file (in either ~/.veil or at the location defined in the environment variable VEIL_CONFIG_FILE).  You can also set the environment variable VEIL_CONFIG directly.
+Currently veil supports net/rpc and gokit, these can be configured using the -t flag which can either be rpc (for net/rpc), gokit, or a path to a template of your choosing.  Instead of defining this in your code you can put these options in a config file (in either ~/.veil or at the location defined in the environment variable VEIL_CONFIG_FILE).  You can also set the environment variable VEIL_CONFIG directly.
 
-Using Veil they would expose this struct via RPC like this
+Using Veil they would expose this struct via RPC like this:
 
 ```
 veil.VeilInitServer()
@@ -82,20 +82,21 @@ fmt.Println(err)
 
 ```
 
+All the code to bind your exposed struct to the chosen RPC is generated automatically.  The code necessary to call your RPC is also generated.  Network errors are automatically stitched into the returned error value as needed.  Context deadlines & cancels should work across the network as well.
+
+Right now nothing else is added as part of the generated code.  My plan is to play with this in a personal project for a bit, see how it behaves and performs, and make adjustments as needed.  Feedback is appreciated.
+
 **Next Steps**
 
 This is simply a prototype to explore the design.  Next steps will include:
 
 * More configurability
-    * generated struct names 
-    * generated file names
-    * more moduler templates
 * unit tests
     * In the library itself
     * generated helper code to test client & server locally with mock networks
 * Add support for:
-    * other RPC paradimgs like grpc
+    * other RPC libraries like grpc
     * authentication, authorization
     * service discovery 
     * rate limiting
-    * ciruit breaker 
+    * circuit breaker 
