@@ -10,9 +10,7 @@ import (
 	"github.com/hoyle1974/veil/veil"
 )
 
-func TestBarService(t *testing.T) {
-	bar := BarService{}
-
+func testBarService(t *testing.T, bar BarService_Interface) {
 	tests := []struct {
 		name     string
 		value    int
@@ -43,6 +41,12 @@ func TestBarService(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBarService(t *testing.T) {
+	bar := &BarService{}
+
+	testBarService(t, bar)
 }
 
 func setupRemoteSuite(t testing.TB) func(t testing.TB) {
@@ -83,34 +87,5 @@ func TestBarService_Remote(t *testing.T) {
 		t.Errorf("Lookup BarService_Interface returned nil")
 	}
 
-	tests := []struct {
-		name     string
-		value    int
-		expected string
-		err      string
-	}{
-		{"Jack", 123, "Hi Jack, your value was 123", ""},
-		{"Bob", 5, "Hi Bob, your value was 5", ""},
-		{"Jill", -1, "", "you wanted an error"},
-	}
-
-	for _, test := range tests {
-		testname := fmt.Sprintf("%v,%v", test.name, test.value)
-		t.Run(testname, func(t *testing.T) {
-			ret, err := bar.SaySomething(context.Background(), test.name, test.value)
-
-			errs := ""
-			if err != nil {
-				errs = err.Error()
-			}
-			if errs != test.err {
-				t.Errorf("SaySomething returned error: [%v] vs [%v]", err, test.err)
-				return
-			}
-			if ret != test.expected {
-				t.Errorf("SaySomething returned the wrong value: %s vs %s", ret, test.expected)
-				return
-			}
-		})
-	}
+	testBarService(t, bar)
 }
