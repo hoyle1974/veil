@@ -12,7 +12,7 @@ import (
 type ConnFactory struct{}
 
 func (c ConnFactory) GetConnection() any {
-	return "http://localhost:8181/BarService/SaySomething"
+	return "http://localhost:8181"
 }
 
 func client() {

@@ -62,7 +62,7 @@ func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.
 		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
 	}
 
-	url := r.connFactory.GetConnection().(string)
+	url := r.connFactory.GetConnection().(string) + "/{{$struct.Name}}/{{.Name}}"
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
@@ -84,8 +84,10 @@ func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.
 
 	// Check the response status code
 	if resp.StatusCode != http.StatusOK {
-		//fmt.Println("Error: Status code", resp.StatusCode)
-		arg{{lastItemIndex .Returns}} = fmt.Errorf("status code %d",resp.StatusCode)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(resp.Body)
+		defer resp.Body.Close()
+		arg1 = fmt.Errorf("%s", buf.String())
 		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
 	}
 
@@ -126,9 +128,16 @@ type {{$struct.Name}}_Container interface {
 	Get() *{{$struct.Name}}
 }
 
+type {{$struct.Name}}_{{.Name}}_Nil_Service_Error struct {}
+func (e {{$struct.Name}}_{{.Name}}_Nil_Service_Error) StatusCode() int { return 503 }
+func (e {{$struct.Name}}_{{.Name}}_Nil_Service_Error) Error() string { return "service {{$struct.Name}} was nil, can't call {{.Name}}" }
+
 func make_{{$struct.Name}}_{{.Name}}_Endpoint(svcContainer {{$struct.Name}}_Container) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		svc := svcContainer.Get()
+		if svc==nil {
+			return {{$struct.Name}}_{{.Name}}_Response{  }, {{$struct.Name}}_{{.Name}}_Nil_Service_Error{}
+		}
 		req := request.({{$struct.Name}}_{{.Name}}_Request)
 		{{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} := svc.{{.Name}}(context.Background(){{range $index,$arg := .Args}},req.{{title $arg.Name}}{{end}})
 		return {{$struct.Name}}_{{.Name}}_Response{ {{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} }, arg{{ lastItemIndex .Returns }}
