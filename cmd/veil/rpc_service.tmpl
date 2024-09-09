@@ -88,7 +88,7 @@ func internal_{{$save.Name}}_RemoteImpl_nilGet[T any](a any) T {
 
 func init() {
 
-	veil_internal.RegisterServerInit(func() {
+	veil_internal.RegisterServerInit(func(factory veil_internal.ServerFactory) {
 {{range .Structs}}
             r := &{{.Name}}_RPC{}
             if err := rpc.Register(r); err!=nil {
