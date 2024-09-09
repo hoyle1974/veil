@@ -62,21 +62,15 @@ func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.
 		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
 	}
 
-	url := r.connFactory.GetConnection().(string) + "/{{$struct.Name}}/{{.Name}}"
-
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		arg{{lastItemIndex .Returns}} = err
-		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	type http_conn interface {
+		Get(path string, jsonData []byte) (*http.Response, error)
 	}
-	
-	// Set the content type header to application/json
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-
-	// Make the HTTP request
-	resp, err := client.Do(req)
+	conn := r.connFactory.GetConnection()
+	resp, err := conn.(http_conn).Get("/{{$struct.Name}}/{{.Name}}", jsonData)
+	if err != nil {
+		arg1 = err
+		return arg0, arg1
+	}
 	if err != nil {
 		arg{{lastItemIndex .Returns}} = err
 		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
@@ -151,8 +145,10 @@ func make_{{$struct.Name}}_{{.Name}}_Endpoint(svcContainer {{$struct.Name}}_Cont
 
 func init() {
 
-	veil_internal.RegisterServerInit(func() {
+	veil_internal.RegisterServerInit(func(factory veil_internal.ServerFactory) {
 {{range .Structs}}
+			mux := factory.GetServer().(*http.ServeMux)
+
 			{{$struct := . }}
             r := &{{.Name}}_RPC{}
             veil_internal.RegisterService(r)
@@ -164,7 +160,7 @@ func init() {
 				decode{{$struct.Name}}_{{.Name}}_Request,
 				encode{{$struct.Name}}_{{.Name}}_Response,
 			)
-			http.Handle("/{{$struct.Name}}/{{.Name}}", {{$struct.Name}}_{{.Name}}_Handler)
+			mux.Handle("/{{$struct.Name}}/{{.Name}}", {{$struct.Name}}_{{.Name}}_Handler)
 			{{end}}
 
 {{end}}

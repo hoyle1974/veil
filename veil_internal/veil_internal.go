@@ -1,12 +1,16 @@
 // This package is for internal use by the veil library and veil generated code
 package veil_internal
 
+type ServerFactory interface {
+	GetServer() any
+}
+
 type ConnectionFactory interface {
 	GetConnection() any
 }
 
 type ClientInit func(factory ConnectionFactory)
-type ServerInit func()
+type ServerInit func(factory ServerFactory)
 
 var ClientInits = []ClientInit{}
 var ServerInits = []ServerInit{}

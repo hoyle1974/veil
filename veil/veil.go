@@ -15,9 +15,13 @@ type ConnectionFactory interface {
 	GetConnection() any
 }
 
+type ServerFactory interface {
+	GetServer() any
+}
+
 // Clients get a client connection factory
 type ClientInit func(factory ConnectionFactory)
-type ServerInit func()
+type ServerInit func(factory ServerFactory)
 
 // Clients should call this before client calls are executed.
 func VeilInitClient(factory ConnectionFactory) {
@@ -27,9 +31,9 @@ func VeilInitClient(factory ConnectionFactory) {
 }
 
 // Servers should call this to start the server
-func VeilInitServer() {
+func VeilInitServer(factory ServerFactory) {
 	for _, i := range veil_internal.ServerInits {
-		i()
+		i(factory)
 	}
 }
 

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/hoyle1974/veil/veil"
 )
@@ -12,7 +14,26 @@ import (
 type ConnFactory struct{}
 
 func (c ConnFactory) GetConnection() any {
-	return "http://localhost:8181"
+	return Connection{}
+}
+
+type Connection struct{}
+
+func (c Connection) Get(path string, jsonData []byte) (*http.Response, error) {
+	url := "http://localhost:8181" + path
+	fmt.Println("Get ", url)
+
+	// Create a new HTTP request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+
+	// Make the HTTP request
+	return client.Do(req)
 }
 
 func client() {

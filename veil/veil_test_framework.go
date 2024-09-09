@@ -19,9 +19,9 @@ func (c *control) StopTest(t testing.TB) {
 
 }
 
-func InitTestFramework(connFactory ConnectionFactory) Control {
+func InitTestFramework(connFactory ConnectionFactory, serverFactory ServerFactory) Control {
 	VeilInitClient(connFactory)
-	VeilInitServer()
+	VeilInitServer(serverFactory)
 
 	return &control{}
 }
