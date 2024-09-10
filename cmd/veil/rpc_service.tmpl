@@ -90,8 +90,10 @@ func init() {
 
 	veil_internal.RegisterServerInit(func(factory veil_internal.ServerFactory) {
 {{range .Structs}}
+			server := factory.GetServer().(*rpc.Server)
+
             r := &{{.Name}}_RPC{}
-            if err := rpc.Register(r); err!=nil {
+            if err := server.Register(r); err!=nil {
                 panic(err)
             }
             veil_internal.RegisterService(r)

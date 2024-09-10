@@ -101,17 +101,17 @@ func (c MockConnection) Get(path string, jsonData []byte) (*http.Response, error
 	return client.Do(req)
 }
 
-type MockConnFactory struct{}
+type MockConnectionFactory struct{}
 
-func (m MockConnFactory) GetConnection() any {
+func (m MockConnectionFactory) GetConnection() any {
 	return MockConnection{}
 }
 
-type MockServFactory struct {
+type MockServerFactory struct {
 	mux *http.ServeMux
 }
 
-func (m MockServFactory) GetServer() any {
+func (m MockServerFactory) GetServer() any {
 	return m.mux
 }
 
@@ -124,7 +124,7 @@ func setupRemoteSuite(t testing.TB, enableNetwork bool) func(t testing.TB) {
 		Handler: mux,
 	}
 
-	control := veil.InitTestFramework(MockConnFactory{}, MockServFactory{mux: mux})
+	control := veil.InitTestFramework(MockConnectionFactory{}, MockServerFactory{mux: mux})
 	control.StartTest(t)
 
 	veil.Serve(&BarService{})
