@@ -23,4 +23,5 @@ type VeilData struct {
 	PackageName string   // The package
 	Structs     []Struct // The structs that will be exposed remotely
 	Packages    []string // Any packages that need to be included
+	Types       []string // List of unique types used
 }

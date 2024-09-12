@@ -25,7 +25,6 @@ func (c MockServerFactory) GetServer() any {
 }
 
 func TestUserRoomIntegration(t *testing.T) {
-	initGob()
 
 	server := rpc.NewServer()
 

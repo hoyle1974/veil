@@ -58,6 +58,26 @@ func extractArguments(input string) (bool, string) {
 
 	return true, parts[1] //arguments
 }
+func commonType(t string) bool {
+	switch t {
+	case "float32", "float64", "complex64", "complex128", "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "bool", "string", "error":
+		return true
+	case "context.Context":
+		return true
+	default:
+		return false
+	}
+}
+
+func extractTypes(typeSet map[string]any) []string {
+	types := []string{}
+	for k, _ := range typeSet {
+		if !commonType(k) {
+			types = append(types, k)
+		}
+	}
+	return types
+}
 
 func main() {
 	// templateFile := "rpc_service.tmpl"
@@ -85,6 +105,9 @@ func main() {
 	data.Filename = fileName
 	data.PackageName = pkgName
 	data.Structs = []Struct{}
+	data.Types = []string{}
+
+	types := map[string]any{}
 
 	fset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
@@ -136,12 +159,14 @@ func main() {
 					for i, param := range method.Type.Params.List {
 						for _, name := range param.Names {
 							tas := getTypeAsString(param.Type)
+							types[tas] = true
 							if i == 0 {
 								if tas != "context.Context" {
 									goto skip
 								}
 								continue
 							}
+
 							args = append(args, Arg{
 								Name: name.Name,
 								Type: tas,
@@ -156,6 +181,7 @@ func main() {
 						errorTypeFound := false
 						for _, result := range method.Type.Results.List {
 							tas := getTypeAsString(result.Type)
+							types[tas] = true
 							if tas == "error" {
 								errorTypeFound = true
 							}
@@ -171,9 +197,6 @@ func main() {
 				}
 
 				data.Structs = append(data.Structs, Struct{
-					//InterfaceName:  fmt.Sprintf("%s_Interface", typeSpec.Name.Name),
-					//RemoteImplName: fmt.Sprintf("%s_RemoteImpl", typeSpec.Name.Name),
-					//RPCName:        fmt.Sprintf("%s_RPC", typeSpec.Name.Name),
 					Name:    typeSpec.Name.Name,
 					Methods: methods,
 				})
@@ -183,6 +206,8 @@ func main() {
 
 		return true
 	})
+
+	data.Types = extractTypes(types)
 
 	tmpl, err = tmpl.Parse(config.GetTemplateString())
 	if err != nil {
