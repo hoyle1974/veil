@@ -52,8 +52,8 @@ func TestUserRoomIntegration(t *testing.T) {
 	control := veil.InitTestFramework(MockConnectionFactory{}, MockServerFactory{server: server})
 	control.StartTest(t)
 
-	veil.Serve(&RoomService{})
-	veil.Serve(&UserService{})
+	veil.Serve(NewRoomService())
+	veil.Serve(NewUserService())
 
 	// Return a function to teardown the test
 	defer func(t testing.TB) {
@@ -80,8 +80,43 @@ func TestUserRoomIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
+	if jack == jill {
+		t.Error("User ids should be different")
+	}
+
 	roomService.AddUser(context.Background(), "Main", jill)
 	roomService.AddUser(context.Background(), "Main", jack)
-	// roomService.Broadcast(context.Background(), "Main", "Hello World!")
+
+	users, err := roomService.GetUsers(context.Background(), "Main")
+	if err != nil {
+		t.Error(err)
+	}
+	if len(users) != 2 {
+		t.Error("Not enough users")
+	}
+
+	roomService.Broadcast(context.Background(), "Main", "Hello All!")
+
+	msg, ok, err := userService.GetLastSay(context.Background(), jack)
+	if err != nil {
+		t.Error(err)
+	}
+	if !ok {
+		t.Error("no last say")
+	}
+	if msg != "Hello All!" {
+		t.Error("Message was ", msg)
+	}
+
+	msg, ok, err = userService.GetLastSay(context.Background(), jill)
+	if err != nil {
+		t.Error(err)
+	}
+	if !ok {
+		t.Error("no last say")
+	}
+	if msg != "Hello All!" {
+		t.Error("Message was ", msg)
+	}
 
 }
