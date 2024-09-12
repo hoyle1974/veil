@@ -66,7 +66,7 @@ func client() {
 	// Lookup the remote interface for the room service
 	// Add the users
 	// Then broadcast a message to all users
-	roomId := "General Lobby"
+	roomId := RoomId("General Lobby")
 	rooms, err := veil.Lookup[RoomService_Interface]()
 	if err != nil {
 		panic(err)

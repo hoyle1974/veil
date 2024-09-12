@@ -8,34 +8,36 @@ import (
 	"github.com/google/uuid"
 )
 
+type UserId string
+
 // @v:service -t rpc
 type UserService struct {
-	users   map[string]string
-	lastSay map[string]string
+	users   map[UserId]string
+	lastSay map[UserId]string
 }
 
 func NewUserService() *UserService {
 	return &UserService{
-		users:   make(map[string]string),
-		lastSay: make(map[string]string),
+		users:   make(map[UserId]string),
+		lastSay: make(map[UserId]string),
 	}
 }
 
-func (u *UserService) NewUser(ctx context.Context, name string) (string, error) {
+func (u *UserService) NewUser(ctx context.Context, name string) (UserId, error) {
 	fmt.Println("NewUser")
 
 	id, _ := uuid.NewRandom()
-	u.users[id.String()] = name
+	u.users[UserId(id.String())] = name
 
-	return id.String(), nil
+	return UserId(id.String()), nil
 }
 
-func (u *UserService) Say(ctx context.Context, userId string, msg string) (bool, error) {
+func (u *UserService) Say(ctx context.Context, userId UserId, msg string) (bool, error) {
 	u.lastSay[userId] = msg
 	return true, nil
 }
 
-func (u *UserService) GetLastSay(ctx context.Context, userId string) (string, bool, error) {
+func (u *UserService) GetLastSay(ctx context.Context, userId UserId) (string, bool, error) {
 	msg, ok := u.lastSay[userId]
 	return msg, ok, nil
 }

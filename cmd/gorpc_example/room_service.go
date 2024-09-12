@@ -8,37 +8,39 @@ import (
 	"github.com/hoyle1974/veil/veil"
 )
 
+type RoomId string
+
 type Room struct {
-	users map[string]any
+	users map[UserId]any
 }
 
 func newRoom() *Room {
 	return &Room{
-		users: make(map[string]any),
+		users: make(map[UserId]any),
 	}
 }
 
-func (r *Room) addUser(userId string) {
+func (r *Room) addUser(userId UserId) {
 	r.users[userId] = true
 }
 
-func (r *Room) removeUser(userId string) {
+func (r *Room) removeUser(userId UserId) {
 	delete(r.users, userId)
 }
 
 // @v:service -t rpc
 type RoomService struct {
-	rooms map[string]*Room
+	rooms map[RoomId]*Room
 }
 
 func NewRoomService() *RoomService {
 	return &RoomService{
-		rooms: make(map[string]*Room),
+		rooms: make(map[RoomId]*Room),
 	}
 }
 
-func (r *RoomService) GetUsers(ctx context.Context, roomId string) ([]string, error) {
-	userids := []string{}
+func (r *RoomService) GetUsers(ctx context.Context, roomId RoomId) ([]UserId, error) {
+	userids := []UserId{}
 
 	for k, _ := range r.rooms[roomId].users {
 		userids = append(userids, k)
@@ -46,7 +48,7 @@ func (r *RoomService) GetUsers(ctx context.Context, roomId string) ([]string, er
 	return userids, nil
 }
 
-func (r *RoomService) AddUser(ctx context.Context, roomId string, userId string) (int, bool, error) {
+func (r *RoomService) AddUser(ctx context.Context, roomId RoomId, userId UserId) (int, bool, error) {
 	fmt.Println("AddUser")
 
 	room, ok := r.rooms[roomId]
@@ -60,7 +62,7 @@ func (r *RoomService) AddUser(ctx context.Context, roomId string, userId string)
 	return 0, true, nil
 }
 
-func (r *RoomService) RemoveUser(ctx context.Context, roomId string, userId string) (bool, error) {
+func (r *RoomService) RemoveUser(ctx context.Context, roomId RoomId, userId UserId) (bool, error) {
 	fmt.Println("RemoveUser")
 
 	room, ok := r.rooms[roomId]
@@ -71,7 +73,7 @@ func (r *RoomService) RemoveUser(ctx context.Context, roomId string, userId stri
 	return true, nil
 }
 
-func (r *RoomService) Broadcast(ctx context.Context, roomId string, msg string) (bool, error) {
+func (r *RoomService) Broadcast(ctx context.Context, roomId RoomId, msg string) (bool, error) {
 	fmt.Println("Broadcast")
 
 	users, err := veil.Lookup[UserService_Interface]()
