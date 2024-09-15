@@ -37,6 +37,12 @@ func (r *{{$struct.Name}}_RPC) RPC_Bind_Service(service any) error {
 }
 
 {{ $struct = . }}
+
+
+type {{$struct.Name}}_Container interface {
+	Get() *{{$struct.Name}}
+}
+
 {{range .Methods}}
 
 // Request Object
@@ -68,8 +74,8 @@ func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.
 	conn := r.connFactory.GetConnection()
 	resp, err := conn.(http_conn).Get("/{{$struct.Name}}/{{.Name}}", jsonData)
 	if err != nil {
-		arg1 = err
-		return arg0, arg1
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
 	}
 	if err != nil {
 		arg{{lastItemIndex .Returns}} = err
@@ -81,7 +87,8 @@ func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(resp.Body)
 		defer resp.Body.Close()
-		arg1 = fmt.Errorf("%s", buf.String())
+
+		arg{{lastItemIndex .Returns}} = fmt.Errorf("%s", buf.String())
 		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
 	}
 
@@ -118,9 +125,6 @@ func decode{{$struct.Name}}_{{.Name}}_Response(_ context.Context, r *http.Respon
 	return response, nil
 }
 
-type {{$struct.Name}}_Container interface {
-	Get() *{{$struct.Name}}
-}
 
 type {{$struct.Name}}_{{.Name}}_Nil_Service_Error struct {}
 func (e {{$struct.Name}}_{{.Name}}_Nil_Service_Error) StatusCode() int { return 503 }
