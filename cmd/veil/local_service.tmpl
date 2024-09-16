@@ -1,0 +1,167 @@
+package {{.PackageName}}
+
+
+import (
+    "context"
+    "github.com/hoyle1974/veil/veil"
+	"github.com/hoyle1974/veil/veil_internal"
+    httptransport "github.com/go-kit/kit/transport/http"
+{{range .Packages}}     "{{.}}"
+{{end}}
+)
+
+{{range .Structs}}
+{{ $struct := . }}
+
+
+// This is an interface that defines the publically exposed methods for the struct '{{.Name}}'
+type {{.Name}}_Interface interface {
+{{range .Methods}}
+    {{.Name}}(ctx context.Context{{range .Args}}, {{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}){{end}}
+}
+
+type {{.Name}}_RPC struct {
+    service *{{.Name}}
+	connFactory veil_internal.ConnectionFactory
+}
+func (r *{{.Name}}_RPC) Get() *{{.Name}} {
+	return r.service
+}
+func (r *{{$struct.Name}}_RPC) RPC_Bind_Service(service any) error {
+    s, ok := service.(*{{.Name}})
+    if !ok {
+        return errors.New("not supported service")
+    }
+    r.service = s
+    return nil
+}
+
+{{ $struct = . }}
+
+
+type {{$struct.Name}}_Container interface {
+	Get() *{{$struct.Name}}
+}
+
+{{range .Methods}}
+
+// Request Object
+type {{$struct.Name}}_{{.Name}}_Request struct { {{range .Args}}
+    {{title .Name}} {{.Type}}{{end}}
+}
+
+type {{$struct.Name}}_{{.Name}}_Response struct { {{range $index, $type := .Returns}}
+    Arg{{$index}} {{$type}}{{end}}
+}
+
+func (r *{{$struct.Name}}_RPC) {{.Name}}(ctx context.Context {{range .Args}},{{.Name}} {{.Type}}{{end}}) ({{range $index, $element := .Returns}}{{if $index}},{{end}}{{$element}}{{end}}) {
+	
+	{{range $index, $element := .Returns}}
+	var arg{{$index}} {{$element}}{{end}}
+
+	// Marshal the JSON data into a byte buffer
+	jsonData, err := json.Marshal({{$struct.Name}}_{{.Name}}_Request{ {{range .Args}}
+		{{title .Name}} : {{.Name}},{{end}}
+	})
+	if err != nil {
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+
+	var req {{$struct.Name}}_{{.Name}}_Request
+	err = json.Unmarshal(jsonData, &req)
+	if err != nil {
+		arg{{lastItemIndex .Returns}} = err
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+
+	type service_lookup interface {
+		Get(name string) any
+	}
+	serviceLookup := r.connFactory.GetConnection().(service_lookup)
+	svc := serviceLookup.Get("{{$struct.Name}}").(*{{$struct.Name}})
+
+	if svc==nil {
+		arg{{lastItemIndex .Returns}} = errors.New("service was nil")
+		return {{range $index, $element := .Returns}} {{if $index}},{{end}}arg{{$index}} {{end}}
+	}
+	{{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} = svc.{{.Name}}(context.Background(){{range $index,$arg := .Args}},req.{{title $arg.Name}}{{end}})
+	response := {{$struct.Name}}_{{.Name}}_Response{ {{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} }
+	
+	return {{range $index, $element := .Returns}} {{if $index}},{{end}}response.Arg{{$index}} {{end}}
+
+}
+
+func encode{{$struct.Name}}_{{.Name}}_Response(_ context.Context, w http.ResponseWriter, response interface{}) error {
+	return json.NewEncoder(w).Encode(response)
+}
+
+func decode{{$struct.Name}}_{{.Name}}_Request(_ context.Context, r *http.Request) (interface{}, error) {
+	var request {{$struct.Name}}_{{.Name}}_Request
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func decode{{$struct.Name}}_{{.Name}}_Response(_ context.Context, r *http.Response) ({{$struct.Name}}_{{.Name}}_Response, error) {
+	var response {{$struct.Name}}_{{.Name}}_Response
+	if err := json.NewDecoder(r.Body).Decode(&response); err != nil {
+		return response, err
+	}
+	return response, nil
+}
+
+
+type {{$struct.Name}}_{{.Name}}_Nil_Service_Error struct {}
+func (e {{$struct.Name}}_{{.Name}}_Nil_Service_Error) StatusCode() int { return 503 }
+func (e {{$struct.Name}}_{{.Name}}_Nil_Service_Error) Error() string { return "service {{$struct.Name}} was nil, can't call {{.Name}}" }
+
+func make_{{$struct.Name}}_{{.Name}}_Endpoint(svcContainer {{$struct.Name}}_Container) endpoint.Endpoint {
+	return func(_ context.Context, request interface{}) (interface{}, error) {
+		svc := svcContainer.Get()
+		if svc==nil {
+			return {{$struct.Name}}_{{.Name}}_Response{  }, {{$struct.Name}}_{{.Name}}_Nil_Service_Error{}
+		}
+		req := request.({{$struct.Name}}_{{.Name}}_Request)
+		{{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} := svc.{{.Name}}(context.Background(){{range $index,$arg := .Args}},req.{{title $arg.Name}}{{end}})
+		return {{$struct.Name}}_{{.Name}}_Response{ {{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} }, arg{{ lastItemIndex .Returns }}
+	}
+}
+{{end}}
+
+
+{{end}}
+
+
+func init() {
+
+	veil_internal.RegisterServerInit(func(factory veil_internal.ServerFactory) {
+{{range .Structs}}
+			//mux := factory.GetServer().(*http.ServeMux)
+
+			{{$struct := . }}
+            r := &{{.Name}}_RPC{}
+            veil_internal.RegisterService(r)
+
+			{{range .Methods}}
+			// Great method handlers
+			//{{$struct.Name}}_{{.Name}}_Handler := httptransport.NewServer(
+			//	make_{{$struct.Name}}_{{.Name}}_Endpoint(r),
+			//	decode{{$struct.Name}}_{{.Name}}_Request,
+			//	encode{{$struct.Name}}_{{.Name}}_Response,
+			//)
+			//mux.Handle("/{{$struct.Name}}/{{.Name}}", {{$struct.Name}}_{{.Name}}_Handler)
+			{{end}}
+
+{{end}}
+    }) // RegisterServerInit
+
+	veil_internal.RegisterClientInit(func(factory veil_internal.ConnectionFactory) {
+{{range .Structs}}
+        veil_internal.RegisterRemoteImpl(&{{.Name}}_RPC{ connFactory: factory})
+{{end}}
+    }) // RegisterClientInit
+
+} //init
+

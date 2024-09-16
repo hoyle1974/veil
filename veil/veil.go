@@ -9,6 +9,24 @@ import (
 	"github.com/hoyle1974/veil/veil_internal"
 )
 
+type localConnection struct {
+}
+
+func (l localConnection) Get(name string) any {
+	return services[name]
+}
+
+type localConnectionFactory struct {
+}
+
+func (l localConnectionFactory) GetConnection() any {
+	return localConnection{}
+}
+
+func GetLocalConnectionFactory() ConnectionFactory {
+	return localConnectionFactory{}
+}
+
 // Should return an opaque type that can be cast and used by a client
 // to connect to the RPC service
 type ConnectionFactory interface {
@@ -39,12 +57,23 @@ func VeilInitServer(factory ServerFactory) {
 
 // Library users should call this with an instantiated version of their service
 // that they want to be exposed remotely.
+var services = map[string]any{}
+
+func getType(myvar interface{}) string {
+	if t := reflect.TypeOf(myvar); t.Kind() == reflect.Ptr {
+		return t.Elem().Name()
+	} else {
+		return t.Name()
+	}
+}
+
 func Serve(service any) error {
 	match := false
 	for _, sr := range veil_internal.ServiceRegistry {
 		err := sr.RPC_Bind_Service(service)
 		if err == nil {
 			match = true
+			services[getType(service)] = service
 		}
 	}
 	if !match {

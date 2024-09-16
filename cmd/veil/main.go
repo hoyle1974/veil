@@ -21,6 +21,9 @@ var rpc_service []byte
 //go:embed gokit_service.tmpl
 var gokit_service []byte
 
+//go:embed local_service.tmpl
+var local_service []byte
+
 func getImports(file *ast.File) []string {
 	var importPaths []string
 	for _, imp := range file.Imports {

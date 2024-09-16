@@ -82,6 +82,8 @@ func (c *Config) GetTemplateString() string {
 		templateStr = gokit_service
 	case "rpc":
 		templateStr = rpc_service
+	case "local":
+		templateStr = local_service
 	default:
 		// PRetend the template string is a file
 		s, err := readFileAsString(c.Template)
