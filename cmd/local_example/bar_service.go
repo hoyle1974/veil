@@ -8,7 +8,9 @@ import (
 )
 
 // v:service -t local
-type BarService struct{}
+type BarService struct {
+	Ping
+}
 
 func (f *BarService) SaySomething(ctx context.Context, name string, value int) (string, error) {
 	ret := fmt.Sprintf("Hi %s, your value was %d", name, value)

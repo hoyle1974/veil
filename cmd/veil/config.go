@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Template  string
-	Directory string
+	Template      string
+	Directory     string
+	TaggedStructs []string
 }
 
 func readFileAsString(filePath string) (string, error) {
@@ -29,9 +30,9 @@ func readFileAsString(filePath string) (string, error) {
 	return string(data), nil
 }
 
-func lookupConfig() *Config {
+func lookupConfig() Config {
 
-	c := &Config{
+	c := Config{
 		Directory: ".",
 	}
 

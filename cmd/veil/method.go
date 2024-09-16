@@ -57,6 +57,48 @@ func GenerateMethodSignature(funcDecl *ast.FuncDecl) string {
 func GetMethodsForStruct(file *ast.File, structName string) []*ast.FuncDecl {
 	var methods []*ast.FuncDecl
 
+	// Helper function to check the receiver type
+	var checkReceiver func(expr ast.Expr) bool
+	checkReceiver = func(expr ast.Expr) bool {
+		switch e := expr.(type) {
+		case *ast.Ident:
+			return e.Name == structName
+		case *ast.StarExpr:
+			return checkReceiver(e.X) // Recursively check the inner expression
+		case *ast.SelectorExpr:
+			return checkReceiver(e.X) // Check the receiver type in embedded structs
+		case *ast.ParenExpr:
+			return checkReceiver(e.X) // Handle parenthesized types
+		}
+		return false
+	}
+
+	// Loop through declarations in the file.
+	for _, decl := range file.Decls {
+		// We are only interested in function declarations.
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+
+		// Check if the function has a receiver.
+		if funcDecl.Recv != nil {
+			for _, receiver := range funcDecl.Recv.List {
+				// Check if the receiver matches the struct name or its embedded types.
+				if checkReceiver(receiver.Type) {
+					methods = append(methods, funcDecl)
+				}
+			}
+		}
+	}
+
+	return methods
+}
+
+// GetMethodsForStruct retrieves methods for a given struct type from the parsed AST.
+func GetMethodsForStruct2(file *ast.File, structName string) []*ast.FuncDecl {
+	var methods []*ast.FuncDecl
+
 	// Loop through declarations in the file.
 	for _, decl := range file.Decls {
 		// We are only interested in function declarations.
