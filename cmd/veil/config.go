@@ -8,9 +8,8 @@ import (
 )
 
 type Config struct {
-	Template      string
-	Directory     string
-	TaggedStructs []string
+	Template  string
+	Directory string
 }
 
 func readFileAsString(filePath string) (string, error) {

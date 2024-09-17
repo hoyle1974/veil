@@ -13,4 +13,5 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/keegancsmith/rpc v1.3.0
+	github.com/pkg/errors v0.9.1
 )

@@ -14,9 +14,17 @@ func (f *BarService) SaySomethingElse(ctx context.Context, name string, value in
 	return ret, nil
 }
 
-type Ping struct {
+type Ping2 struct {
 }
 
-func (f *Ping) Ping(ctx context.Context) (string, error) {
-	return "Pong", nil
+func (f *Ping2) PingPong(ctx context.Context) (string, error) {
+	return "PongPong", nil
+}
+
+type Ping struct {
+	Ping2
+}
+
+func (f *Ping) PongPing(ctx context.Context) (string, error) {
+	return "PongPing", nil
 }

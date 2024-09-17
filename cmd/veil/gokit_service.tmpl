@@ -136,7 +136,9 @@ func make_{{$struct.Name}}_{{.Name}}_Endpoint(svcContainer {{$struct.Name}}_Cont
 		if svc==nil {
 			return {{$struct.Name}}_{{.Name}}_Response{  }, {{$struct.Name}}_{{.Name}}_Nil_Service_Error{}
 		}
+		{{ if gt (len .Args) 0 }}
 		req := request.({{$struct.Name}}_{{.Name}}_Request)
+		{{end}}
 		{{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} := svc.{{.Name}}(context.Background(){{range $index,$arg := .Args}},req.{{title $arg.Name}}{{end}})
 		return {{$struct.Name}}_{{.Name}}_Response{ {{range $index,$return := .Returns}}{{if $index}},{{end}}arg{{$index}}{{end}} }, arg{{ lastItemIndex .Returns }}
 	}

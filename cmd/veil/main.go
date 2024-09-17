@@ -94,19 +94,21 @@ func main() {
 	// projectPath :=  "/Users/jstrohm/code/veil/cmd/veil"
 	// fmt.Println(os.Environ())
 	fileName := os.Getenv("GOFILE")
-	pkgName := os.Getenv("GOPACKAGE")
+	// pkgName := os.Getenv("GOPACKAGE")
 
 	if fileName == "" {
 		fileName = "/Users/jstrohm/code/veil/cmd/gokit_example/bar_service.go"
-		pkgName = "main"
+		// pkgName = "main"
 	}
 
 	config := lookupConfig()
 
-	data, err := collectData(pkgName, fileName, config)
+	data, err := GetDataForGoFile(fileName, config)
 	if err != nil {
 		panic(err)
 	}
+
+	config.Template = "local"
 
 	tmpl, err = tmpl.Parse(config.GetTemplateString())
 	if err != nil {
@@ -114,12 +116,16 @@ func main() {
 	}
 
 	ifile := config.Directory + "/" + "impl_" + fileName
+	fmt.Println("Writing to ", ifile)
 
 	f, err := os.OpenFile(ifile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
+
+	fmt.Println(data)
+	fmt.Println(config)
 
 	err = tmpl.Execute(f, data)
 	if err != nil {

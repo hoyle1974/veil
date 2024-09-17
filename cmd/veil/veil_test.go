@@ -20,18 +20,7 @@ func TestBarService_Parse(t *testing.T) {
 	if data.Structs[0].Name != "BarService" {
 		t.Error("BarService not found")
 	}
-	if len(data.Structs[0].Methods) != 2 {
+	if len(data.Structs[0].Methods) != 4 {
 		t.Errorf("not enough methods in BarService struct, only found %d", len(data.Structs[0].Methods))
 	}
-
-	// data, err := GetDataForGoFile(fileName, config)
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-
-	// for k, v := range data.Structs[0].Methods {
-	// 	fmt.Println(k, v)
-	// }
-
-	// t.Error(data)
 }
