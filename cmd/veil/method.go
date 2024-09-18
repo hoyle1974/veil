@@ -72,6 +72,13 @@ func GetMethodsForStruct(file *ast.File, structName string) []*ast.FuncDecl {
 		}
 		return false
 	}
+	var validFunc func(*ast.FuncDecl) bool
+	validFunc = func(f *ast.FuncDecl) bool {
+		if !f.Name.IsExported() {
+			return false
+		}
+		return true
+	}
 
 	// Loop through declarations in the file.
 	for _, decl := range file.Decls {
@@ -85,7 +92,7 @@ func GetMethodsForStruct(file *ast.File, structName string) []*ast.FuncDecl {
 		if funcDecl.Recv != nil {
 			for _, receiver := range funcDecl.Recv.List {
 				// Check if the receiver matches the struct name or its embedded types.
-				if checkReceiver(receiver.Type) {
+				if checkReceiver(receiver.Type) && validFunc(funcDecl) {
 					methods = append(methods, funcDecl)
 				}
 			}

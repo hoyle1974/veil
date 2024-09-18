@@ -143,18 +143,11 @@ func init() {
 			//mux := factory.GetServer().(*http.ServeMux)
 
 			{{$struct := . }}
+			{
             r := &{{.Name}}_RPC{}
             veil_internal.RegisterService(r)
+			}
 
-			{{range .Methods}}
-			// Great method handlers
-			//{{$struct.Name}}_{{.Name}}_Handler := httptransport.NewServer(
-			//	make_{{$struct.Name}}_{{.Name}}_Endpoint(r),
-			//	decode{{$struct.Name}}_{{.Name}}_Request,
-			//	encode{{$struct.Name}}_{{.Name}}_Response,
-			//)
-			//mux.Handle("/{{$struct.Name}}/{{.Name}}", {{$struct.Name}}_{{.Name}}_Handler)
-			{{end}}
 
 {{end}}
     }) // RegisterServerInit

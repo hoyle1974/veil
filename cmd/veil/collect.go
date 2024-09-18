@@ -27,6 +27,15 @@ func GetDataForGoFile(fileName string, config Config) (VeilData, error) {
 	return c.get()
 }
 
+func containsMethod(arr []Method, value Method) bool {
+	for _, v := range arr {
+		if v.Name == value.Name {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *collect) get() (VeilData, error) {
 	fmt.Println("Getting Data for: ", c.fileName)
 
@@ -83,7 +92,12 @@ func (c *collect) get() (VeilData, error) {
 			for _, st := range holder.embedded {
 				methods, tempTypes := c.getAllMethods(astFile, st, types)
 				types = tempTypes
-				s.Methods = append(s.Methods, methods...)
+
+				for _, method := range methods {
+					if !containsMethod(s.Methods, method) {
+						s.Methods = append(s.Methods, method)
+					}
+				}
 			}
 
 			allStructs[structName] = s

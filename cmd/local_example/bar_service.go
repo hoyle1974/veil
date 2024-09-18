@@ -19,3 +19,7 @@ func (f *BarService) SaySomething(ctx context.Context, name string, value int) (
 	}
 	return ret, nil
 }
+
+func (s *BarService) getOrCreateRoom(roomId string) string {
+	return "string"
+}
